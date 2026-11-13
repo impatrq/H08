@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Página de prueba</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(6px);
+      padding: 40px 30px;
+      border-radius: 16px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      margin-bottom: 12px;
+      font-size: 2rem;
+    }
+
+    p {
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    button {
+      background: #fff;
+      color: #1e3c72;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    #mensaje {
+      margin-top: 20px;
+      min-height: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>¡Hola, mundo! 👋</h1>
+    <p>Si ves esta página, tu publicación en GitHub funcionó correctamente.</p>
+    <button onclick="saludar()">Tocá acá</button>
+    <div id="mensaje"></div>
+  </div>
+
+  <script>
+    function saludar() {
+      const ahora = new Date().toLocaleTimeString("es-AR");
+      document.getElementById("mensaje").textContent =
+        "¡Funciona! Son las " + ahora;
+    }
+  </script>
+</body>
+</html>
