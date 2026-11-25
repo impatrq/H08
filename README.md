@@ -23,11 +23,11 @@ La Raspberry arma su propia red wifi, así que no hace falta internet:
 
 ## Cómo está armado
 
-La Raspberry habla por I2C con dos placas PCA9685 (direcciones 0x40 y 0x41) que generan el pulso de los 20 servos y prenden las luces. El motor de la brújula es un 28BYJ-48 con su driver ULN2003, conectado a los GPIO 12, 16, 20 y 21. La llave BATERÍA del panel va al GPIO 26 y sirve para apagar todo en orden. Los servos se alimentan aparte, con una fuente LM2596 de 5 V, nunca desde la Pi.
+La Raspberry habla por I2C con dos placas PCA9685 (direcciones 0x40 y 0x41) que generan el pulso de los 20 servos y prenden las luces. El motor de la brújula es un 28BYJ-48 con su driver ULN2003, conectado a los GPIO 12, 16, 20 y 21. La llave BATERÍA del panel va al GPIO 26 y sirve para apagar todo en orden. Los servos se alimentan aparte, nunca desde la Pi: una fuente de 12 V alimenta un regulador LM2596 que baja a 5 V.
 
 Las conexiones pasan por una placa madre que diseñamos en KiCad (170 x 110 mm, una sola cara).
 
-En los instrumentos donde la aguja tiene que dar más vuelta que lo que gira un servo usamos engranajes impresos: 36/24, 40/24 y 48/24. El horizonte artificial tiene su propio mecanismo y la brújula gira sin fin con el paso a paso.
+En los instrumentos donde la aguja tiene que dar más vuelta que lo que gira un servo usamos engranajes impresos: 36/24, 40/24 y 48/24. El horizonte artificial muestra solo el alabeo: el plato va pegado al servo. La brújula gira sin fin con el paso a paso.
 
 La pantalla HDMI de la Raspberry muestra el tablero completo, con las mismas carátulas que pegamos en los instrumentos y un helicóptero en 3D que vuela con la simulación.
 
@@ -44,12 +44,14 @@ La pantalla HDMI de la Raspberry muestra el tablero completo, con las mismas car
 
 | Componente | Cant. |
 |---|---|
-| Raspberry Pi 5 con fuente oficial de 27 W | 1 |
+| Raspberry Pi 5 de 4 GB con fuente oficial de 27 W | 1 |
+| MicroSD de 16 GB | 1 |
 | PCA9685 | 2 |
 | Servo SG90 | 20 |
 | Motor 28BYJ-48 con driver ULN2003 | 1 |
 | LED 5 mm (ámbar, rojo y verde) | 6 |
-| Fuente LM2596 (5 V) | 1 |
+| Fuente de 12 V 7 A | 1 |
+| Regulador LM2596 (de 12 V a 5 V) | 1 |
 | Llave de palanca (BATERÍA) | 1 |
 | Pantalla HDMI | 1 |
 | Placa madre | 1 |
@@ -74,8 +76,8 @@ Con `python3 diagnostico_pi.py` se revisan las conexiones y con `python3 calibra
 
 ![Equipo en la expo](Multimedia/Expo/Equipo_en_la_expo.jpg)
 
-- Mateo Ghirelli: programa de la Raspberry Pi e informe
-- Fausto Taranto: diseño e impresión 3D, panel principal
-- Constantino da Costa: instrumentos, impresión 3D y calibración
-- Thomas Lehmann: armado mecánico y página web
-- Agustín Merodo: armado mecánico, redes y sponsors
+- Mateo Ghirelli: software (programa en Python, WiFi y simulación)
+- Fausto Taranto: hardware (circuito, calibración y cableado)
+- Constantino da Costa: integración, pruebas, redes y presentación
+- Thomas Lehmann: restauración mecánica y montaje
+- Agustín Merodo: relevamiento, montaje y documentación

@@ -1,6 +1,6 @@
 # Piezas impresas
 
-Todas las piezas del tablero en STL, separadas por tipo. La cantidad va en el nombre del archivo: `Tapa_carcasa50_engranajes_36-24_x6.stl` se imprime 6 veces. Todo va a escala 100 %, en PLA o PETG y sin soportes (las piezas ya están acostadas como se imprimen).
+Todas las piezas del tablero en STL, separadas por tipo. La cantidad va en el nombre del archivo: `Tapa_carcasa50_engranajes_36-24_x6.stl` se imprime 6 veces. Todo va a escala 100 %, en PLA y sin soportes (las piezas ya están acostadas como se imprimen).
 
 En `Modelo_3D_helicoptero` está el modelo 3D del Sikorsky entero (.glb). Se abre con el Visor 3D de Windows o en cualquier visor de glTF.
 

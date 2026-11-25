@@ -12,6 +12,8 @@ Para abrirla usamos KiCad 10. El proyecto está guardado en formato de KiCad 6, 
 
 Para hacerla no hace falta exportar nada: `Planos/arte_bcu_espejado.pdf` ya está a escala 1:1. Antes de transferirlo conviene medir el contorno con una regla, tiene que dar 170 x 110 mm. Se imprime al 100 %, no con "ajustar a la página".
 
+En la placa que armamos no van U1 y U2 (los ULN2003) ni las borneras J11 y J12 de los motores. El motor de la brújula usa la plaquita ULN2003 que viene con él y se conecta con cables a los pines que pusimos en el lugar de U2.
+
 **Ojo con el conector de la Raspberry (J1).** Cuando hicimos la placa, el dibujo quedó dado vuelta, como en un espejo. Por eso los pines de J1 no quedaron en el mismo orden que los de la Raspberry, y el cable plano de 40 hilos no sirve: conectaría cada señal en el lugar equivocado.
 
 Lo resolvimos con cables sueltos (Dupont hembra-hembra), uno por pin. Cada cable une el pin de la Raspberry con el pin de la placa que tiene el mismo nombre, por ejemplo SDA con SDA. El nombre de cada pin está escrito en la placa. La lista de qué va con qué está en [Software/H08_Pi5/LEEME.md](../Software/H08_Pi5/LEEME.md#cableado-de-la-raspberry-a-la-placa-madre).
