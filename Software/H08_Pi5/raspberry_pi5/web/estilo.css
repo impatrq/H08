@@ -1,0 +1,92 @@
+/* Estilo común de las tres páginas (tablero, mando y entrada del profesor).
+   Las letras van en web/fuentes (SIL OFL) porque la red del tablero no tiene internet. */
+@font-face{font-family:"Inter";src:url("/fuentes/inter.woff2") format("woff2");
+  font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:"Space Grotesk";src:url("/fuentes/space-grotesk.woff2") format("woff2");
+  font-weight:300 700;font-style:normal;font-display:swap}
+
+:root{
+  /* fondo y superficies */
+  --fondo:#0b0e12; --sup:#131820; --sup2:#1a212b; --borde:#253041; --linea:#1f2834;
+  /* texto */
+  --texto:#e9eef5; --texto2:#c9d5e3; --tenue:#9aa8b8; --suave:#b7c3d1;
+  /* acento naranja */
+  --acento:#ff7a1a; --acento-suave:rgba(255,122,26,.13); --acento-texto:#ffd9bd; --sobre-acento:#1a0c00;
+  /* estados */
+  --ok:#3ecf8e; --ok-suave:rgba(62,207,142,.12); --ok-texto:#b8f0d4;
+  --alerta:#ffb547; --alerta-suave:rgba(255,181,71,.14); --alerta-texto:#ffe1a8;
+  --peligro:#e2493a; --peligro-fuerte:#c0392b; --peligro-suave:rgba(255,107,91,.14); --peligro-texto:#ffc2b9;
+  /* chapa e instrumentos */
+  --chapa1:#1c1c1d; --chapa2:#0f0f10;
+  /* letras */
+  --f-titulo:"Space Grotesk","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-texto:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-numeros:"Space Grotesk",ui-monospace,Menlo,Consolas,monospace;
+  /* medidas */
+  --radio:14px; --radio-chico:10px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--fondo);color:var(--texto);font-family:var(--f-texto);font-size:15px;
+  line-height:1.4;-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:var(--f-titulo);text-wrap:balance;margin:0}
+a{color:#ff9a4a}
+a:hover{color:#ffb77d}
+button{font-family:var(--f-texto)}
+:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+
+.tarjeta{background:var(--sup);border:1px solid var(--borde);border-radius:var(--radio)}
+
+/* chips de estado (En vuelo, Profesor con el mando...) */
+.chipe{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:4px 11px;
+  font-size:13px;font-weight:600;white-space:nowrap;background:var(--sup);border:1px solid var(--borde);color:var(--suave)}
+.chipe .pt{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.chipe.ok{background:var(--ok-suave);border-color:transparent;color:var(--ok-texto)}
+.chipe.ok .pt{background:var(--ok)}
+.chipe.acento{background:var(--acento-suave);border-color:transparent;color:var(--acento-texto)}
+.chipe.acento .pt{background:var(--acento)}
+.chipe.alerta{background:var(--alerta-suave);border-color:transparent;color:var(--alerta-texto)}
+.chipe.alerta .pt{background:var(--alerta)}
+.chipe.mal{background:var(--peligro-suave);border-color:transparent;color:var(--peligro-texto)}
+.chipe.mal .pt{background:var(--peligro)}
+
+.boton{min-height:48px;border-radius:12px;border:1px solid var(--borde);background:var(--sup);
+  color:var(--suave);font-weight:600;font-size:15px;padding:0 14px;cursor:pointer}
+.boton.prim{background:var(--acento);border-color:var(--acento);color:var(--sobre-acento);font-weight:700}
+.boton.borde{background:transparent;border:2px solid var(--acento);color:var(--acento-texto);font-weight:700}
+.boton.rojo{background:var(--peligro-fuerte);border-color:var(--peligro-fuerte);color:#fff;font-weight:700}
+.boton:disabled{opacity:.38;cursor:not-allowed}
+.boton:active:not(:disabled){transform:translateY(1px)}
+
+/* pestañas en segmentos */
+.segmentos{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;
+  background:var(--sup);border:1px solid var(--borde);border-radius:12px;padding:4px}
+.segmentos button{height:40px;border:0;border-radius:9px;background:transparent;color:var(--suave);
+  font-weight:500;font-size:14px;cursor:pointer}
+.segmentos button.on{background:var(--acento);color:var(--sobre-acento);font-weight:700}
+
+/* barra de avance de la fase */
+.avance{height:5px;border-radius:3px;background:var(--linea);overflow:hidden}
+.avance i{display:block;height:100%;width:0;background:var(--acento);border-radius:3px;transition:width .6s ease}
+
+/* aviso flotante de "reconectando" */
+.reconectando{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  z-index:90;display:none;align-items:center;gap:9px;background:#2a1f12;border:1px solid #5a3d1d;color:var(--acento-texto);
+  border-radius:999px;padding:8px 16px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.reconectando.si{display:flex}
+.reconectando .giro{width:14px;height:14px;border-radius:50%;border:2px solid var(--acento);border-right-color:transparent;
+  animation:giro 0.9s linear infinite}
+@keyframes giro{to{transform:rotate(360deg)}}
+/* llave BATERÍA: cartel mientras se apaga, y aviso arriba si arrancó en APAG */
+.apagando{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;
+  background:rgba(5,7,10,.94);text-align:center;padding:24px}
+.apagando.si{display:flex}
+.apagando b{display:block;font-size:clamp(28px,5vw,64px);color:#fff;margin-bottom:14px}
+.apagando p{font-size:clamp(17px,2.4vw,30px);color:var(--acento-texto);max-width:30ch;margin:0 auto;line-height:1.35}
+.avisoLlave{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);
+  z-index:95;display:none;max-width:min(92vw,720px);background:#2a1f12;border:1px solid #5a3d1d;color:var(--acento-texto);
+  border-radius:12px;padding:9px 16px;font-size:14px;font-weight:600;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.avisoLlave.si{display:block}
+@media (prefers-reduced-motion:reduce){.reconectando .giro{animation:none}.avance i{transition:none}}

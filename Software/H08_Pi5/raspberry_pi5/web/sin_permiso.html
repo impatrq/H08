@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Entrar como profesor · Tablero H-08</title>
+<link rel="icon" href="/logo.png">
+<link rel="stylesheet" href="/estilo.css">
+<!--
+  Lo que ve el que entra a /mando sin sesión. Es la única forma de entrar
+  (no hay QR de administrador). A propósito no dice "acceso denegado":
+  el alumno que llegó tocando de más solo necesita volver al tablero.
+-->
+<style>
+html,body{min-height:100%}
+.caja{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  padding:2rem max(20px,env(safe-area-inset-right,0px)) 2rem max(20px,env(safe-area-inset-left,0px));text-align:center}
+.caja img{width:64px;height:64px;border-radius:50%}
+h1{font-size:24px}
+p{margin:0;color:var(--suave);max-width:30rem;line-height:1.55}
+form{width:100%;max-width:22rem;padding:18px;display:flex;flex-direction:column;gap:12px;text-align:left}
+label{font-size:14px;color:var(--suave);font-weight:600}
+input{font:inherit;font-size:17px;color:var(--texto);background:var(--sup2);border:1px solid var(--borde);border-radius:10px;padding:13px 14px;width:100%}
+input:focus{outline:2px solid var(--acento);border-color:var(--acento)}
+.error{color:var(--peligro-texto);font-size:14px;min-height:1.2em;margin:0}
+.boton{width:100%;min-height:52px;font-size:17px}
+</style>
+</head>
+<body>
+<div class="caja">
+  <img src="/logo.png" alt="Logo del proyecto H-08">
+  <h1>Entrar como profesor</h1>
+  <p>Desde acá se maneja el vuelo del tablero. Para mirar no hace falta ninguna clave.</p>
+  <form id="f" class="tarjeta" autocomplete="off">
+    <label for="clave">Clave del profesor</label>
+    <input id="clave" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+    <p class="error" id="error"></p>
+    <button class="boton prim" id="b" type="submit">Entrar</button>
+  </form>
+  <p style="font-size:14px">Si no sabés la clave, pedísela al equipo del proyecto.</p>
+  <p><a href="/">Volver al tablero</a></p>
+</div>
+<script>
+"use strict";
+const f=document.getElementById('f'), b=document.getElementById('b'),
+      err=document.getElementById('error'), cl=document.getElementById('clave');
+f.addEventListener('submit', async ev=>{
+  ev.preventDefault();
+  err.textContent=''; b.disabled=true;
+  try{
+    const r=await fetch('/api/entrar',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clave:cl.value})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok && d.ok){ location.href='/mando'; return; }
+    err.textContent=d.motivo||'No se pudo entrar.';
+    cl.select();
+  }catch(e){ err.textContent='No hay conexión con el tablero.'; }
+  b.disabled=false;
+});
+cl.focus();
+</script>
+</body>
+</html>

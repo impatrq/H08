@@ -1,0 +1,6 @@
+# La Raspberry es Linux: los scripts tienen que tener fin de línea LF.
+# Con CRLF (el de Windows), bash falla con "$'\r': command not found".
+* text=auto eol=lf
+*.png binary
+*.pdf binary
+*.zip binary

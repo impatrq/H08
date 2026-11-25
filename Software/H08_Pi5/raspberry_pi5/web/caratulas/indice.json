@@ -1,0 +1,102 @@
+{
+ "AIRSPEED": {
+  "L": 86.0,
+  "R": 40.0,
+  "archivo": "airspeed.svg"
+ },
+ "ALTIMETER": {
+  "L": 86.0,
+  "R": 40.0,
+  "archivo": "altimeter.svg"
+ },
+ "AMMETER": {
+  "L": 56.0,
+  "R": 25.0,
+  "archivo": "ammeter.svg"
+ },
+ "CARB_AIR_TEMP": {
+  "L": 56.0,
+  "R": 25.0,
+  "archivo": "carb_air_temp.svg"
+ },
+ "CHT": {
+  "L": 64.0,
+  "R": 29.0,
+  "archivo": "cht.svg"
+ },
+ "CLOCK": {
+  "L": 56.0,
+  "R": 25.0,
+  "archivo": "reloj.svg"
+ },
+ "COMPASS": {
+  "L": 131.0,
+  "R": 62.5,
+  "archivo": "compass.svg"
+ },
+ "FUEL_PRESS": {
+  "L": 56.0,
+  "R": 25.0,
+  "archivo": "fuel_press.svg"
+ },
+ "FUEL_QTY_AFT": {
+  "L": 64.0,
+  "R": 29.0,
+  "archivo": "fuel_qty_aft.svg"
+ },
+ "FUEL_QTY_FWD": {
+  "L": 64.0,
+  "R": 29.0,
+  "archivo": "fuel_qty_fwd.svg"
+ },
+ "MAP": {
+  "L": 86.0,
+  "R": 40.0,
+  "archivo": "map.svg"
+ },
+ "OIL_PRESS": {
+  "L": 56.0,
+  "R": 25.0,
+  "archivo": "oil_press.svg"
+ },
+ "OIL_TEMP": {
+  "L": 56.0,
+  "R": 25.0,
+  "archivo": "oil_temp.svg"
+ },
+ "TACH_ENG": {
+  "L": 86.0,
+  "R": 40.0,
+  "archivo": "tach_eng.svg"
+ },
+ "TURN": {
+  "L": 86.0,
+  "R": 40.0,
+  "archivo": "turn.svg"
+ },
+ "VOLTMETER": {
+  "L": 56.0,
+  "R": 25.0,
+  "archivo": "voltmeter.svg"
+ },
+ "VOR_CDI": {
+  "L": 86.0,
+  "R": 40.0,
+  "archivo": "vor_cdi.svg"
+ },
+ "VSI": {
+  "L": 86.0,
+  "R": 40.0,
+  "archivo": "vsi.svg"
+ },
+ "XMSN_OIL_PRESS": {
+  "L": 56.0,
+  "R": 25.0,
+  "archivo": "xmsn_oil_press.svg"
+ },
+ "XMSN_OIL_TEMP": {
+  "L": 56.0,
+  "R": 25.0,
+  "archivo": "xmsn_oil_temp.svg"
+ }
+}

@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Modo profesor · Tablero H-08</title>
+<link rel="icon" href="/logo.png">
+<link rel="stylesheet" href="/estilo.css">
+<!--
+  Modo profesor, para manejar el tablero desde el celular parado adelante del curso.
+  Con la clave inicial el servidor no acepta órdenes, por eso primero pide cambiarla.
+  Varios pueden entrar pero manda uno solo a la vez.
+  Botones de 48 px como mínimo: el profe toca sin mirar mientras habla.
+-->
+<style>
+body{min-height:100%}
+.pag{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px;
+  padding:12px max(14px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px))}
+header{display:flex;align-items:center;gap:10px;min-height:44px}
+header img{width:40px;height:40px;border-radius:50%;flex:none}
+header .t{display:flex;flex-direction:column;min-width:0}
+header .t b{font-family:var(--f-titulo);font-weight:700;font-size:18px}
+header .t span{font-size:12.5px;font-weight:600;color:var(--tenue)}
+header .t span.ok{color:var(--ok-texto)} header .t span.mal{color:var(--peligro-texto)} header .t span.alerta{color:var(--alerta-texto)}
+header .esp{flex:1}
+header a{font-size:14px;font-weight:600;padding:12px 4px}
+.aviso{border-radius:var(--radio);padding:12px 14px;font-size:14.5px;line-height:1.45;display:flex;flex-direction:column;gap:10px}
+.aviso b{color:#fff}
+.aviso.piden{background:#2a2416;border:1px solid #4a4227;color:#f0dca6}
+.aviso.notengo{background:#2a1f16;border:1px solid #4a3827;color:#e8c79a}
+.aviso .fila{display:flex;gap:8px;flex-wrap:wrap}
+.aviso .boton{min-height:42px}
+.reposo{background:var(--acento-suave);border:1px solid #5a3d1d;border-radius:var(--radio);padding:14px;display:flex;flex-direction:column;gap:12px;color:var(--acento-texto);font-size:15px;line-height:1.45}
+.reposo b{color:#fff}
+.reposo .boton{min-height:58px;font-size:18px}
+.estado{padding:14px;display:flex;flex-direction:column;gap:10px}
+.estado .arriba{display:flex;align-items:center;gap:8px}
+.estado .modo{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--sobre-acento);background:var(--acento);border-radius:6px;padding:3px 8px;text-transform:uppercase}
+.estado .modo.mal{background:var(--peligro);color:#fff}
+.estado .modo.quieto{background:var(--sup2);color:var(--suave)}
+.estado .esp{flex:1}
+.estado .hora{font-family:var(--f-numeros);font-size:14px;color:var(--tenue)}
+.estado .fase{font-family:var(--f-titulo);font-weight:700;font-size:24px;line-height:1.15}
+.dos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.lista{list-style:none;margin:0;padding:0 2px;display:flex;flex-direction:column;gap:6px;max-height:56vh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;position:relative}
+.lista li{flex:none}
+.lista li{margin:0}
+.it{width:100%;min-height:52px;display:flex;align-items:center;gap:10px;border-radius:12px;padding:8px 12px;
+  background:var(--sup);border:1px solid var(--borde);color:var(--texto);text-align:left;cursor:pointer;font-family:var(--f-texto)}
+.it:disabled{opacity:.4;cursor:not-allowed}
+.it.ahora{background:var(--acento-suave);border:2px solid var(--acento)}
+.it .n{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;
+  font-size:12px;font-weight:700;background:var(--linea);color:var(--tenue)}
+.it.hecha .n{background:var(--ok-suave);color:var(--ok-texto)}
+.it.ahora .n{background:var(--acento);color:var(--sobre-acento)}
+.it .cuerpo{flex:1;min-width:0}
+.it .cuerpo b{display:block;font-size:15px;font-weight:500}
+.it .cuerpo small{display:block;font-size:12.5px;color:var(--tenue);line-height:1.35;margin-top:2px}
+.it .marca{font-size:13px;color:var(--tenue);flex:none}
+.it.ahora .marca{color:var(--acento-texto)}
+.sis{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--acento-texto);margin:8px 2px 2px}
+.sev{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;flex:none;text-transform:uppercase}
+.sev.LEVE{background:var(--ok-suave);color:var(--ok-texto)}
+.sev.MEDIA{background:var(--alerta-suave);color:var(--alerta-texto)}
+.sev.GRAVE, .sev.CRITICA{background:var(--peligro-suave);color:var(--peligro-texto)}
+.ajustes{padding:4px 14px}
+.ajustes .fila{display:flex;align-items:center;gap:8px;min-height:56px;border-bottom:1px solid var(--linea)}
+.ajustes .fila:last-child{border-bottom:0}
+.ajustes .fila > span{flex:1;font-size:15px}
+.ajustes .fila small{display:block;font-size:12.5px;color:var(--tenue)}
+.vel button{height:38px;min-width:50px;border-radius:9px;border:1px solid var(--borde);background:transparent;color:var(--suave);font-size:14px;cursor:pointer}
+.vel button.on{background:var(--acento);border-color:var(--acento);color:var(--sobre-acento);font-weight:700}
+.vel button:disabled{opacity:.4}
+.llave{width:52px;height:30px;border-radius:15px;background:var(--linea);border:0;position:relative;cursor:pointer;flex:none}
+.llave::after{content:"";position:absolute;left:4px;top:4px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .15s}
+.llave[aria-checked="true"]{background:var(--ok)}
+.llave[aria-checked="true"]::after{left:26px}
+.llave:disabled{opacity:.4}
+.probar{height:38px;border-radius:9px;border:2px solid var(--acento);background:transparent;color:var(--acento-texto);font-weight:700;font-size:13px;padding:0 14px;cursor:pointer}
+.probar.on{background:var(--acento);color:var(--sobre-acento)}
+.probar:disabled{opacity:.4}
+a.boton{display:flex;align-items:center;justify-content:center;text-decoration:none}
+details.clave{padding:12px 14px}
+details.clave summary{cursor:pointer;font-weight:600;color:var(--suave);font-size:14.5px}
+form.cl{display:flex;flex-direction:column;gap:9px;margin-top:10px}
+form.cl input{font:inherit;font-size:16px;color:var(--texto);background:var(--sup2);border:1px solid var(--borde);border-radius:10px;padding:12px 13px;width:100%}
+form.cl input:focus{outline:2px solid var(--acento);border-color:var(--acento)}
+.msj{font-size:14px;min-height:1.2em;margin:0}
+.msj.mal{color:var(--peligro-texto)} .msj.bien{color:var(--ok-texto)}
+#primera{display:none;position:fixed;inset:0;z-index:30;background:var(--fondo);overflow-y:auto;padding:2rem 1.2rem}
+#primera .caja{max-width:24rem;margin:0 auto;display:flex;flex-direction:column;gap:1rem}
+#primera h1{font-size:22px}
+#primera p{color:var(--suave);line-height:1.55;margin:0}
+body.quieto .lista .it{opacity:.4;pointer-events:none}
+details.red{padding:12px 14px}
+details.red summary{cursor:pointer;font-weight:600;color:var(--suave);font-size:14.5px}
+details.red summary small{font-weight:400;margin-left:6px}
+.celus{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.celus li{display:flex;align-items:center;gap:10px;background:var(--sup2);border:1px solid var(--borde);border-radius:10px;padding:8px 10px}
+.celus li .q{flex:1;min-width:0}
+.celus li b{display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.celus li small{color:var(--suave);font-size:12.5px}
+.celus li .boton{min-height:38px;padding:0 12px;font-size:14px;flex:none}
+.celus li.bloq{opacity:.75}
+.red h3{font-size:13px;color:var(--suave);margin:14px 0 0;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.red .nota{color:var(--suave);font-size:13px;line-height:1.45;margin:10px 0 0}
+.red .todos{width:100%;margin-top:10px}
+footer{text-align:center;padding:4px 0 8px}
+footer a{color:var(--tenue);font-size:14px}
+</style>
+</head>
+<body>
+<div class="pag">
+  <header>
+    <img src="/logo.png" alt="Logo del proyecto H-08">
+    <div class="t"><b>Modo profesor</b><span id="sub">Conectando…</span></div>
+    <span class="esp"></span>
+    <a href="/salir">Salir</a>
+  </header>
+
+  <div class="aviso" id="avisoMando" hidden></div>
+
+  <section class="reposo" id="sReposo" hidden>
+    <div id="reposoTxt"><b>El tablero está en reposo.</b> Las agujas no se mueven hasta que lo actives.</div>
+    <button class="boton prim siempre" id="bActivar" type="button">Activar tablero</button>
+  </section>
+
+  <section class="tarjeta estado" aria-live="polite">
+    <div class="arriba"><span class="modo quieto" id="modotxt">—</span><span class="esp"></span><span class="hora" id="horatxt">00:00</span></div>
+    <div class="fase" id="fasetxt">—</div>
+    <div class="dos">
+      <button class="boton borde" type="button" id="bpausa">Pausa</button>
+      <button class="boton rojo" type="button" id="bdetener">Detener</button>
+    </div>
+  </section>
+
+  <nav class="segmentos" aria-label="Qué elegir">
+    <button type="button" class="on" id="p1">Vuelo</button>
+    <button type="button" id="p2">Accidentes</button>
+    <button type="button" id="p3">Fallas</button>
+  </nav>
+  <ol class="lista" id="lista"></ol>
+
+  <section class="tarjeta ajustes">
+    <div class="fila"><span>Velocidad</span>
+      <span class="vel" style="display:flex;gap:6px;flex:none">
+        <button type="button" id="v05">0,5×</button><button type="button" id="v1" class="on">1×</button><button type="button" id="v4">4×</button>
+      </span></div>
+    <div class="fila"><span>Piloto reacciona<small id="pilotoTxt">Corrige solo cuando entra una falla</small></span>
+      <button type="button" class="llave" id="bpiloto" role="switch" aria-checked="true" aria-label="Piloto reacciona"></button></div>
+    <div class="fila"><span>Prueba de lámparas<small>Prende las seis luces 5 segundos</small></span>
+      <button type="button" class="probar" id="blamp">Probar</button></div>
+  </section>
+
+  <a class="boton siempre" href="/">Ver el tablero</a>
+
+  <details class="tarjeta red" id="dRed">
+    <summary>Celulares conectados <small id="redCuenta"></small></summary>
+    <p class="msj" id="redMsj"></p>
+    <ul class="celus" id="redLista"></ul>
+    <button class="boton rojo todos" type="button" id="bEcharTodos" hidden>Desconectar a todos menos a mí</button>
+    <div id="redBloq" hidden><h3>Desconectados</h3><ul class="celus" id="redBloqLista"></ul></div>
+    <p class="nota">Un celular desconectado no puede volver a entrar a la red hasta que lo permitas o hasta que se reinicie la Pi. Tocá dos veces para confirmar.</p>
+  </details>
+
+  <details class="tarjeta clave">
+    <summary>Cambiar la clave del profesor</summary>
+    <form class="cl" id="f2">
+      <input id="a2" type="password" placeholder="Clave actual" autocomplete="current-password" required>
+      <input id="n2" type="password" placeholder="Clave nueva" autocomplete="new-password" required>
+      <input id="r2" type="password" placeholder="Repetí la clave nueva" autocomplete="new-password" required>
+      <p class="msj" id="m2"></p>
+      <button class="boton clave-b" type="submit">Cambiar la clave</button>
+    </form>
+  </details>
+
+  <footer><a href="/salir">Cerrar la sesión</a></footer>
+</div>
+
+<!-- primera vez: con la clave inicial no se opera nada -->
+<div id="primera">
+  <div class="caja">
+    <h1>Elegí tu clave</h1>
+    <p>Entraste con la clave inicial. Antes de manejar el tablero, elegí una clave propia de al menos 6
+       caracteres. Desde ahora vas a entrar con esa.</p>
+    <form class="cl" id="f1">
+      <input id="n1" type="password" placeholder="Clave nueva" autocomplete="new-password" required>
+      <input id="r1" type="password" placeholder="Repetí la clave nueva" autocomplete="new-password" required>
+      <p class="msj" id="m1"></p>
+      <button class="boton prim clave-b" type="submit">Guardar la clave</button>
+    </form>
+  </div>
+</div>
+
+<div class="reconectando" id="reconectando" role="status"><span class="giro"></span>Reconectando con el tablero…</div>
+
+<script>
+"use strict";
+let CAT=null, EST=null, pausado=false, pilotoON=true, tab=1;
+let tengoMando=false, puedeMandar=false, tablero='reposo';
+const $=id=>document.getElementById(id);
+function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// Órdenes. 403 = venció la sesión (hay que volver a entrar),
+// 409 = el mando lo tiene otro (hay que pedirlo)
+async function mandar(url){
+  try{
+    const r=await fetch(url,{method:'POST'});
+    if(r.status===403){ avisar('sesion'); return false; }
+    if(r.status===409){ tengoMando=false; refrescarMando(); return false; }
+    return r.ok;
+  }catch(e){ return false; }
+}
+function orden(a,v){ return mandar('/api/accion/'+a+'?valor='+encodeURIComponent(v)); }
+function ir(m,id){ mandar('/api/modo/'+m+'?id='+encodeURIComponent(id)); }
+function vel(v){
+  orden('velocidad',v);
+  ['v05','v1','v4'].forEach(x=>$(x).classList.remove('on'));
+  $({0.5:'v05',1:'v1',4:'v4'}[v]).classList.add('on');
+}
+// como el PRESS TO TEST de la cabina: prende las seis luces y se suelta a los 5 s
+let timerLamp=null;
+function lamparas(){
+  const b=$('blamp'), prender=!b.classList.contains('on');
+  orden('prueba_luces',prender); b.classList.toggle('on',prender); b.textContent=prender?'Probando…':'Probar';
+  clearTimeout(timerLamp);
+  if(prender) timerLamp=setTimeout(()=>{ orden('prueba_luces',false); b.classList.remove('on'); b.textContent='Probar'; },5000);
+}
+function piloto(){
+  pilotoON=!pilotoON; orden('piloto_reactivo',pilotoON);
+  $('bpiloto').setAttribute('aria-checked', String(pilotoON));
+  $('pilotoTxt').textContent=pilotoON?'Corrige solo cuando entra una falla':'No corrige: la falla sigue su curso';
+}
+$('bActivar').addEventListener('click',()=>orden('activar',''));
+$('bpausa').addEventListener('click',()=>orden('pausa',!pausado));
+$('bdetener').addEventListener('click',()=>mandar('/api/modo/0'));
+$('v05').addEventListener('click',()=>vel(0.5)); $('v1').addEventListener('click',()=>vel(1)); $('v4').addEventListener('click',()=>vel(4));
+$('bpiloto').addEventListener('click',piloto);
+$('blamp').addEventListener('click',lamparas);
+[1,2,3].forEach(n=>$('p'+n).addEventListener('click',()=>pestania(n)));
+
+function avisar(que){
+  if(que==='sesion'){
+    document.body.innerHTML='<div class="pag" style="padding-top:3rem;text-align:center;line-height:1.7">'+
+      '<h1 style="font-size:22px">La sesión venció</h1>'+
+      '<p style="color:var(--suave)">Volvé a entrar con la clave del profesor.</p>'+
+      '<p><a href="/mando">Entrar de nuevo</a> · <a href="/">Ver el tablero</a></p></div>';
+  }
+}
+
+// La clave: '1' es la pantalla de la primera vez, '2' la sección del final
+async function cambiarClave(ev, cual){
+  ev.preventDefault();
+  const m=$('m'+cual), nueva=$('n'+cual).value;
+  m.className='msj';
+  if(nueva!==$('r'+cual).value){ m.className='msj mal'; m.textContent='Las dos claves nuevas no son iguales.'; return; }
+  let r, d={};
+  try{
+    r=await fetch('/api/clave',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({actual: cual==='2'?$('a2').value:'', nueva})});
+    d=await r.json().catch(()=>({}));
+  }catch(e){ m.className='msj mal'; m.textContent='No hay conexión con el tablero.'; return; }
+  if(r.ok && d.ok){
+    m.className='msj bien'; m.textContent=d.motivo||'Listo.';
+    ['a2','n2','r2','n1','r1'].forEach(x=>{ if($(x)) $(x).value=''; });
+    refrescarMando();
+  }else{ m.className='msj mal'; m.textContent=d.motivo||'No se pudo cambiar la clave.'; }
+}
+$('f1').addEventListener('submit',e=>cambiarClave(e,'1'));
+$('f2').addEventListener('submit',e=>cambiarClave(e,'2'));
+
+async function refrescarMando(){
+  let e;
+  try{ e=await (await fetch('/api/sesion',{cache:'no-store'})).json(); }catch(err){ return; }
+  if(!e.admin){ avisar('sesion'); return; }
+  $('primera').style.display=e.cambiar_clave?'block':'none';
+  tengoMando=e.mando;
+  const caja=$('avisoMando'), sub=$('sub');
+  if(e.pedido_ajeno){
+    caja.className='aviso piden'; caja.hidden=false;
+    caja.innerHTML='<div><b>Otro dispositivo está pidiendo el mando'+(e.pedido_nombre?' ('+esc(e.pedido_nombre)+')':'')+'.</b> '+
+      'Si no contestás, se lo lleva en '+e.pedido_resta+' s.</div><div class="fila">'+
+      '<button class="boton" type="button" data-m="ceder">Cedérselo</button>'+
+      '<button class="boton prim" type="button" data-m="rechazar">Sigo yo</button></div>';
+    sub.className='alerta'; sub.textContent='Te están pidiendo el mando';
+  }else if(e.mando){
+    caja.hidden=true; sub.className='ok';
+    sub.textContent='Tenés el mando'+(e.admins>1?' · '+e.admins+' dispositivos con acceso':'');
+  }else if(e.hay_titular){
+    caja.className='aviso notengo'; caja.hidden=false;
+    caja.innerHTML='<div><b>El mando lo tiene otro dispositivo'+(e.titular_nombre?' ('+esc(e.titular_nombre)+')':'')+'.</b> '+
+      'Podés mirar, pero tus órdenes no van a pasar.</div><div class="fila">'+
+      (e.pedido_mio
+        ? (e.pedido_resta>0 ? '<button class="boton" type="button" disabled>Pedido… '+e.pedido_resta+' s</button>'
+                            : '<button class="boton prim" type="button" data-m="tomar">Tomar el mando</button>')
+        : '<button class="boton" type="button" data-m="pedir">Pedir el mando</button>')+'</div>';
+    sub.className='mal'; sub.textContent='El mando lo tiene otro';
+  }else{
+    caja.hidden=true; sub.className='ok'; sub.textContent='El mando está libre: la primera orden lo toma';
+  }
+  caja.querySelectorAll('[data-m]').forEach(b=>b.addEventListener('click',()=>accionMando(b.dataset.m)));
+  puedeMandar=!!(e.mando||e.mando_libre);
+  bloquear();
+}
+async function accionMando(que){ await fetch('/api/mando/'+que,{method:'POST'}); refrescarMando(); }
+// en reposo solo quedan "Activar tablero", "Ver el tablero" y la clave
+function bloquear(){
+  document.querySelectorAll('.pag button:not(.clave-b), .pag .it').forEach(b=>{
+    if(b.closest('#avisoMando') || b.closest('.segmentos')) return;
+    if(b.id==='bActivar') b.disabled=!puedeMandar||tablero!=='reposo';
+    else if(b.classList.contains('siempre')) b.disabled=false;
+    else b.disabled=!puedeMandar||tablero!=='activo';
+  });
+}
+function mostrarTablero(estado){
+  if(estado===tablero) return;
+  tablero=estado;
+  document.body.classList.toggle('quieto', estado!=='activo');
+  $('sReposo').hidden=estado==='activo';
+  $('bActivar').hidden=estado!=='reposo';
+  $('reposoTxt').innerHTML=estado==='volviendo'
+    ? '<b>Volviendo al reposo…</b> Las agujas van al cero y después se sueltan.'
+    : '<b>El tablero está en reposo.</b> Las agujas no se mueven hasta que lo actives.';
+  bloquear();
+}
+
+// listas de fases, accidentes y fallas
+function pestania(n){
+  tab=n;
+  [1,2,3].forEach(i=>$('p'+i).classList.toggle('on', i===n));
+  dibujarLista();
+}
+let firmaLista='';
+function dibujarLista(){
+  if(!CAT) return;
+  const d=EST||{}, L=$('lista');
+  const iFase=(d.modo===1)?(CAT.fases||[]).findIndex(f=>f.id===d.fase_id):-1;
+  const activas=new Set(d.fallas||[]);
+  const firma=[tab,iFase,d.escenario||'',[...activas].join(','),d.tablero].join('|');
+  if(firma===firmaLista) return;
+  firmaLista=firma;
+  let h='';
+  if(tab===1){
+    h=(CAT.fases||[]).map((f,i)=>{
+      const cl=i===iFase?'ahora':(iFase>=0&&i<iFase?'hecha':'');
+      const marca=i===iFase?'Ahora':(cl==='hecha'?'Hecha':Math.round(f.dur)+' s');
+      return `<li><button type="button" class="it ${cl}" data-ir="1" data-id="${esc(f.id)}"><span class="n">${i+1}</span>
+        <span class="cuerpo"><b>${esc(f.nombre)}</b></span><span class="marca">${marca}</span></button></li>`;
+    }).join('');
+  }else if(tab===2){
+    h=(CAT.escenarios||[]).map(e=>{
+      const ahora=d.escenario && d.escenario===e.nombre;
+      return `<li><button type="button" class="it ${ahora?'ahora':''}" data-ir="2" data-id="${esc(e.id)}">
+        <span class="cuerpo"><b>${esc(e.nombre)}</b><small>${esc(e.resumen||'')}</small></span>
+        <span class="marca">${ahora?'Ahora':Math.round(e.duracion/60)+' min'}</span></button></li>`;
+    }).join('');
+  }else{
+    let sis='';
+    (CAT.fallas||[]).forEach(f=>{
+      if(f.sistema!==sis){ sis=f.sistema; h+=`<li class="sis">${esc(sis.charAt(0)+sis.slice(1).toLowerCase())}</li>`; }
+      const ahora=activas.has(f.id);
+      h+=`<li><button type="button" class="it ${ahora?'ahora':''}" data-ir="3" data-id="${esc(f.id)}">
+        <span class="cuerpo"><b>${esc(f.nombre)}</b><small>${esc((f.sintomas&&f.sintomas[0])||'')}</small></span>
+        ${ahora?'<span class="marca">Activa</span>':`<span class="sev ${esc(f.sev)}">${esc(f.sev.toLowerCase())}</span>`}</button></li>`;
+    });
+  }
+  L.innerHTML=h||'<li style="color:var(--tenue)">Nada para mostrar.</li>';
+  L.querySelectorAll('[data-ir]').forEach(b=>b.addEventListener('click',()=>ir(+b.dataset.ir,b.dataset.id)));
+  // la lista se corre sola para que la fase de ahora quede a la vista
+  const ahora=L.querySelector('.it.ahora');
+  if(ahora) L.scrollTop=Math.max(0, ahora.parentElement.offsetTop-L.clientHeight/3);
+  bloquear();
+}
+
+function hora(t){ const dd=n=>String(Math.floor(n)).padStart(2,'0'); t=t||0; return (t>=3600?dd(t/3600)+':':'')+dd(t/60%60)+':'+dd(t%60); }
+function pintar(d){
+  EST=d;
+  const m=$('modotxt');
+  let cls='', txt=(d.modo_nombre||'—').replace(/ controlado$/,'');
+  if(d.tablero && d.tablero!=='activo'){ cls='quieto'; txt='En reposo'; }
+  else if(d.escenario || (d.fallas&&d.fallas.length)) cls='mal';
+  m.className='modo '+cls; m.textContent=txt;
+  $('horatxt').textContent=hora(d.t);
+  $('fasetxt').textContent=(d.tablero&&d.tablero!=='activo')?'Esperando que lo actives':(d.fase||d.escenario||'—');
+  pausado=d.pausado;
+  $('bpausa').textContent=pausado?'Seguir':'Pausa';
+  mostrarTablero(d.tablero||'activo');
+  dibujarLista();
+}
+let caidoDesde=0;
+function caido(si){
+  if(si){ if(!caidoDesde) caidoDesde=Date.now(); if(Date.now()-caidoDesde>1500) $('reconectando').classList.add('si'); }
+  else{ caidoDesde=0; $('reconectando').classList.remove('si'); }
+}
+async function arrancar(){
+  try{ CAT=await (await fetch('/api/catalogo',{cache:'no-store'})).json(); }
+  catch(e){ caido(true); setTimeout(arrancar,2000); return; }
+  tablero=''; mostrarTablero('reposo'); dibujarLista();
+  refrescarMando(); setInterval(refrescarMando,1000);
+  // un pedido por vez (el próximo sale cuando vuelve el anterior) y corte a los 2 s
+  const vuelta=async ()=>{
+    if(!document.hidden){
+      const ctrl=window.AbortController?new AbortController():null, t0=Date.now();
+      const corte=setTimeout(()=>{ if(ctrl) ctrl.abort(); },2000);
+      try{ const d=await (await fetch('/api/estado',{cache:'no-store',signal:ctrl?ctrl.signal:undefined})).json(); caido(false); pintar(d); }
+      catch(e){ caido(true); }
+      clearTimeout(corte);
+      setTimeout(vuelta, Math.max(0, 500-(Date.now()-t0))); return;
+    }
+    setTimeout(vuelta,500);
+  };
+  vuelta();
+}
+// Celulares conectados. Desconectar pide dos toques.
+let redTimer=null;
+function mins(s){ s=s||0; return s<60?'recién':(s<3600?'hace '+Math.round(s/60)+' min':'hace '+(s/3600).toFixed(1).replace('.',',')+' h'); }
+function corto(mac){ return mac?mac.slice(-5).toUpperCase():''; }
+function dosToques(b, accion){
+  if(b.dataset.seguro==='1'){ b.dataset.seguro=''; accion(); return; }
+  const txt=b.textContent; b.dataset.seguro='1'; b.textContent='¿Seguro?';
+  setTimeout(()=>{ if(b.dataset.seguro==='1'){ b.dataset.seguro=''; b.textContent=txt; } },3000);
+}
+async function redOrden(url, ok){
+  const r=await mandar(url);
+  $('redMsj').className='msj '+(r?'bien':'mal');
+  $('redMsj').textContent=r?ok:(puedeMandar?'No se pudo. Probá de nuevo.':'Para desconectar hace falta tener el mando.');
+  verRed();
+}
+async function verRed(){
+  let d;
+  try{ const r=await fetch('/api/red/celulares',{cache:'no-store'}); if(r.status===403){ avisar('sesion'); return; } d=await r.json(); }
+  catch(e){ return; }
+  const L=$('redLista'), B=$('redBloqLista');
+  if(!d.disponible){ $('redCuenta').textContent=''; L.innerHTML='';
+    $('redMsj').className='msj'; $('redMsj').textContent='Esto se ve sólo en la Raspberry, con la red del tablero levantada.';
+    $('bEcharTodos').hidden=true; $('redBloq').hidden=!d.bloqueados.length; }
+  $('redCuenta').textContent=d.disponible?('('+d.conectados.length+' de '+d.limite+')'):'';
+  if(d.disponible){
+    L.innerHTML=d.conectados.map(c=>`<li><span class="q"><b>${esc(c.nombre||'Celular')} · ${esc(corto(c.mac))}${c.yo?' (vos)':''}</b><small>${c.ip?esc(c.ip)+' · ':''}conectado ${mins(c.segundos)}</small></span>${c.yo?'':`<button class="boton rojo" type="button" data-mac="${esc(c.mac)}">Desconectar</button>`}</li>`).join('')
+      || '<li><span class="q"><small>No hay celulares conectados.</small></span></li>';
+    L.querySelectorAll('button[data-mac]').forEach(b=>b.onclick=()=>dosToques(b,()=>redOrden('/api/red/desconectar?mac='+encodeURIComponent(b.dataset.mac),'Listo: desconectado.')));
+    $('bEcharTodos').hidden=!d.conectados.some(c=>!c.yo);
+  }
+  $('redBloq').hidden=!d.bloqueados.length;
+  B.innerHTML=d.bloqueados.map(c=>`<li class="bloq"><span class="q"><b>${esc(c.nombre||'Celular')} · ${esc(corto(c.mac))}</b><small>desconectado por el profesor</small></span><button class="boton" type="button" data-mac="${esc(c.mac)}">Permitir</button></li>`).join('');
+  B.querySelectorAll('button[data-mac]').forEach(b=>b.onclick=()=>redOrden('/api/red/permitir?mac='+encodeURIComponent(b.dataset.mac),'Listo: puede volver a entrar.'));
+}
+$('bEcharTodos').onclick=()=>dosToques($('bEcharTodos'),()=>redOrden('/api/red/desconectar_otros','Listo: quedaste solo vos en la red.'));
+$('dRed').addEventListener('toggle',()=>{
+  clearInterval(redTimer); redTimer=null;
+  if($('dRed').open){ verRed(); redTimer=setInterval(()=>{ if(!document.hidden) verRed(); },4000); }
+});
+arrancar();
+</script>
+</body>
+</html>
