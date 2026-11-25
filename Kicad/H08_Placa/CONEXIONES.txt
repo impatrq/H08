@@ -1,0 +1,342 @@
+==========================================================================
+CONEXIONES DE LA PLACA MADRE DEL TABLERO H-08
+Sikorsky H-19A Chickasaw - matricula H-08
+Taller Regional Quilmes
+==========================================================================
+
+La red de la placa, igual que en el esquematico. Esta por nodo, por
+componente pata por pata y al final la alimentacion.
+
+--------------------------------------------------------------------------
+A. POR NODO  (35 nodos)
+--------------------------------------------------------------------------
+
++3V3   (3 patas)
+     J1-1  J5-5  J6-5  
+
++5V   (23 patas)
+     C1-1  C2-1  C3-1  C4-1  D2-1  F1-2  J3-1  J4-1  J8-1  J8-3  J8-5  
+     J8-7  J8-9  J8-11  R1-1  U1-1  U1-8  U1-9  U1-16  U2-1  U2-8  
+     U2-9  U2-16  
+
++5V_ENT   (2 patas)
+     F1-1  J2-1  
+
+D1_A   (2 patas)
+     D1-1  R1-2  
+
+GND   (26 patas)
+     C1-2  C2-2  C3-2  C4-2  D1-2  D2-2  J1-6  J1-14  J1-20  J1-30  
+     J1-34  J2-2  J3-2  J4-2  J5-1  J6-1  J7-7  J7-8  U1-4  U1-5  
+     U1-12  U1-13  U2-4  U2-5  U2-12  U2-13  
+
+LUZ1   (2 patas)
+     J7-1  R2-1  
+
+LUZ1_K   (2 patas)
+     J8-2  R2-2  
+
+LUZ2   (2 patas)
+     J7-2  R3-1  
+
+LUZ2_K   (2 patas)
+     J8-4  R3-2  
+
+LUZ3   (2 patas)
+     J7-3  R4-1  
+
+LUZ3_K   (2 patas)
+     J8-6  R4-2  
+
+LUZ4   (2 patas)
+     J7-4  R5-1  
+
+LUZ4_K   (2 patas)
+     J8-8  R5-2  
+
+LUZ5   (2 patas)
+     J7-5  R6-1  
+
+LUZ5_K   (2 patas)
+     J8-10  R6-2  
+
+LUZ6   (2 patas)
+     J7-6  R7-1  
+
+LUZ6_K   (2 patas)
+     J8-12  R7-2  
+
+MOTA_A1   (2 patas)
+     J11-1  U1-3  
+
+MOTA_A2   (2 patas)
+     J11-2  U1-6  
+
+MOTA_B1   (2 patas)
+     J11-3  U1-11  
+
+MOTA_B2   (2 patas)
+     J11-4  U1-14  
+
+MOTB_A1   (2 patas)
+     J12-1  U2-3  
+
+MOTB_A2   (2 patas)
+     J12-2  U2-6  
+
+MOTB_B1   (2 patas)
+     J12-3  U2-11  
+
+MOTB_B2   (2 patas)
+     J12-4  U2-14  
+
+SCL   (3 patas)
+     J1-5  J5-3  J6-3  
+
+SDA   (3 patas)
+     J1-3  J5-4  J6-4  
+
+X27A_1   (2 patas)
+     J1-31  U1-2  
+
+X27A_2   (2 patas)
+     J1-33  U1-7  
+
+X27A_3   (2 patas)
+     J1-35  U1-10  
+
+X27A_4   (2 patas)
+     J1-37  U1-15  
+
+X27B_1   (2 patas)
+     J1-32  U2-2  
+
+X27B_2   (2 patas)
+     J1-36  U2-7  
+
+X27B_3   (2 patas)
+     J1-38  U2-10  
+
+X27B_4   (2 patas)
+     J1-40  U2-15  
+
+--------------------------------------------------------------------------
+B. POR COMPONENTE, PATA POR PATA
+--------------------------------------------------------------------------
+
+   Las que dicen SIN CONECTAR van con la marca de no-conectado (tecla Q
+   en KiCad). No es opcional: sin esa marca el control electrico las
+   reporta como error y no vas a saber cuales dejaste realmente afuera.
+
+J2  -  Entrada 5 V  (Bornera_2)   2 patas, 0 sin conectar
+     pata 1   1              -> +5V_ENT
+     pata 2   2              -> GND
+
+F1  -  4 A lento  (Fuse)   2 patas, 0 sin conectar
+     pata 1   1              -> +5V_ENT
+     pata 2   2              -> +5V
+
+C1  -  2200uF 16V  (C_Pol)   2 patas, 0 sin conectar
+     pata 1   1              -> +5V
+     pata 2   2              -> GND
+
+C2  -  100nF  (C)   2 patas, 0 sin conectar
+     pata 1   1              -> +5V
+     pata 2   2              -> GND
+
+R1  -  1k  (R)   2 patas, 0 sin conectar
+     pata 1   1              -> +5V
+     pata 2   2              -> D1_A
+
+D1  -  verde  (LED)   2 patas, 0 sin conectar
+     pata 1   1              -> D1_A
+     pata 2   2              -> GND
+
+D2  -  P6KE6.8A  (TVS)   2 patas, 0 sin conectar
+     pata 1   1              -> +5V
+     pata 2   2              -> GND
+
+J3  -  V+ al PCA0  (Bornera_2)   2 patas, 0 sin conectar
+     pata 1   1              -> +5V
+     pata 2   2              -> GND
+
+J4  -  V+ al PCA1  (Bornera_2)   2 patas, 0 sin conectar
+     pata 1   1              -> +5V
+     pata 2   2              -> GND
+
+J1  -  Cable plano a la Pi  (Raspberry_Pi_40)   40 patas, 24 sin conectar
+     pata 1   3V3            -> +3V3
+     pata 2   5V             -> SIN CONECTAR
+     pata 3   GPIO2_SDA      -> SDA
+     pata 4   5V             -> SIN CONECTAR
+     pata 5   GPIO3_SCL      -> SCL
+     pata 6   GND            -> GND
+     pata 7   GPIO4          -> SIN CONECTAR
+     pata 8   GPIO14_TXD     -> SIN CONECTAR
+     pata 9   GND            -> SIN CONECTAR
+     pata 10  GPIO15_RXD     -> SIN CONECTAR
+     pata 11  GPIO17         -> SIN CONECTAR
+     pata 12  GPIO18         -> SIN CONECTAR
+     pata 13  GPIO27         -> SIN CONECTAR
+     pata 14  GND            -> GND
+     pata 15  GPIO22         -> SIN CONECTAR
+     pata 16  GPIO23         -> SIN CONECTAR
+     pata 17  3V3            -> SIN CONECTAR
+     pata 18  GPIO24         -> SIN CONECTAR
+     pata 19  GPIO10_MOSI    -> SIN CONECTAR
+     pata 20  GND            -> GND
+     pata 21  GPIO9_MISO     -> SIN CONECTAR
+     pata 22  GPIO25         -> SIN CONECTAR
+     pata 23  GPIO11_SCLK    -> SIN CONECTAR
+     pata 24  GPIO8_CE0      -> SIN CONECTAR
+     pata 25  GND            -> SIN CONECTAR
+     pata 26  GPIO7_CE1      -> SIN CONECTAR
+     pata 27  GPIO0_IDSD     -> SIN CONECTAR
+     pata 28  GPIO1_IDSC     -> SIN CONECTAR
+     pata 29  GPIO5          -> SIN CONECTAR
+     pata 30  GND            -> GND
+     pata 31  GPIO6          -> X27A_1
+     pata 32  GPIO12         -> X27B_1
+     pata 33  GPIO13         -> X27A_2
+     pata 34  GND            -> GND
+     pata 35  GPIO19         -> X27A_3
+     pata 36  GPIO16         -> X27B_2
+     pata 37  GPIO26         -> X27A_4
+     pata 38  GPIO20         -> X27B_3
+     pata 39  GND            -> SIN CONECTAR
+     pata 40  GPIO21         -> X27B_4
+
+J5  -  Modulo PCA0 0x40  (Modulo_PCA9685)   6 patas, 2 sin conectar
+     pata 1   GND            -> GND
+     pata 2   OE             -> SIN CONECTAR
+     pata 3   SCL            -> SCL
+     pata 4   SDA            -> SDA
+     pata 5   VCC            -> +3V3
+     pata 6   V+             -> SIN CONECTAR
+
+J6  -  Modulo PCA1 0x41  (Modulo_PCA9685)   6 patas, 2 sin conectar
+     pata 1   GND            -> GND
+     pata 2   OE             -> SIN CONECTAR
+     pata 3   SCL            -> SCL
+     pata 4   SDA            -> SDA
+     pata 5   VCC            -> +3V3
+     pata 6   V+             -> SIN CONECTAR
+
+J7  -  Canales 8-13 del PCA1  (Canales_PCA1)   8 patas, 0 sin conectar
+     pata 1   CH8            -> LUZ1
+     pata 2   CH9            -> LUZ2
+     pata 3   CH10           -> LUZ3
+     pata 4   CH11           -> LUZ4
+     pata 5   CH12           -> LUZ5
+     pata 6   CH13           -> LUZ6
+     pata 7   GND            -> GND
+     pata 8   GND            -> GND
+
+R2  -  220  (R)   2 patas, 0 sin conectar
+     pata 1   1              -> LUZ1
+     pata 2   2              -> LUZ1_K
+
+R3  -  220  (R)   2 patas, 0 sin conectar
+     pata 1   1              -> LUZ2
+     pata 2   2              -> LUZ2_K
+
+R4  -  220  (R)   2 patas, 0 sin conectar
+     pata 1   1              -> LUZ3
+     pata 2   2              -> LUZ3_K
+
+R5  -  220  (R)   2 patas, 0 sin conectar
+     pata 1   1              -> LUZ4
+     pata 2   2              -> LUZ4_K
+
+R6  -  220  (R)   2 patas, 0 sin conectar
+     pata 1   1              -> LUZ5
+     pata 2   2              -> LUZ5_K
+
+R7  -  220  (R)   2 patas, 0 sin conectar
+     pata 1   1              -> LUZ6
+     pata 2   2              -> LUZ6_K
+
+J8  -  6 luces del tablero  (Bornera_12)   12 patas, 0 sin conectar
+     pata 1   L1+            -> +5V
+     pata 2   L1-            -> LUZ1_K
+     pata 3   L2+            -> +5V
+     pata 4   L2-            -> LUZ2_K
+     pata 5   L3+            -> +5V
+     pata 6   L3-            -> LUZ3_K
+     pata 7   L4+            -> +5V
+     pata 8   L4-            -> LUZ4_K
+     pata 9   L5+            -> +5V
+     pata 10  L5-            -> LUZ5_K
+     pata 11  L6+            -> +5V
+     pata 12  L6-            -> LUZ6_K
+
+U1  -  L293D  (L293D)   16 patas, 0 sin conectar
+     pata 1   EN1_2          -> +5V
+     pata 2   1A             -> X27A_1
+     pata 7   2A             -> X27A_2
+     pata 9   EN3_4          -> +5V
+     pata 10  3A             -> X27A_3
+     pata 15  4A             -> X27A_4
+     pata 3   1Y             -> MOTA_A1
+     pata 6   2Y             -> MOTA_A2
+     pata 11  3Y             -> MOTA_B1
+     pata 14  4Y             -> MOTA_B2
+     pata 16  VCC1           -> +5V
+     pata 8   VCC2           -> +5V
+     pata 4   GND            -> GND
+     pata 5   GND            -> GND
+     pata 12  GND            -> GND
+     pata 13  GND            -> GND
+
+C3  -  100nF  (C)   2 patas, 0 sin conectar
+     pata 1   1              -> +5V
+     pata 2   2              -> GND
+
+J11  -  Motor altimetro  (Bornera_4)   4 patas, 0 sin conectar
+     pata 1   A1             -> MOTA_A1
+     pata 2   A2             -> MOTA_A2
+     pata 3   B1             -> MOTA_B1
+     pata 4   B2             -> MOTA_B2
+
+U2  -  L293D  (L293D)   16 patas, 0 sin conectar
+     pata 1   EN1_2          -> +5V
+     pata 2   1A             -> X27B_1
+     pata 7   2A             -> X27B_2
+     pata 9   EN3_4          -> +5V
+     pata 10  3A             -> X27B_3
+     pata 15  4A             -> X27B_4
+     pata 3   1Y             -> MOTB_A1
+     pata 6   2Y             -> MOTB_A2
+     pata 11  3Y             -> MOTB_B1
+     pata 14  4Y             -> MOTB_B2
+     pata 16  VCC1           -> +5V
+     pata 8   VCC2           -> +5V
+     pata 4   GND            -> GND
+     pata 5   GND            -> GND
+     pata 12  GND            -> GND
+     pata 13  GND            -> GND
+
+C4  -  100nF  (C)   2 patas, 0 sin conectar
+     pata 1   1              -> +5V
+     pata 2   2              -> GND
+
+J12  -  Motor brujula  (Bornera_4)   4 patas, 0 sin conectar
+     pata 1   A1             -> MOTB_A1
+     pata 2   A2             -> MOTB_A2
+     pata 3   B1             -> MOTB_B1
+     pata 4   B2             -> MOTB_B2
+
+--------------------------------------------------------------------------
+C. ALIMENTACION
+--------------------------------------------------------------------------
+
+   En el esquematico van los simbolos de KiCad power:+5V, power:+3V3 y
+   power:GND, y dos PWR_FLAG: una en +5V_ENT y otra en GND. Sin las
+   banderas el ERC se queja de que la placa no tiene de donde
+   alimentarse, porque la fuente entra por una bornera.
+
+   Los 5 V no salen de las patas 2 y 4 de la Raspberry. Entran por la
+   bornera J2 desde la fuente, pasan por el fusible F1 y de ahi van a
+   todo. Las patas de 5 V de la Pi quedan sin conectar.
+
+==========================================================================

@@ -1,0 +1,90 @@
+Placa madre del tablero H-08
+
+Se abre H08_Placa.kicad_pro y aparecen el esquematico (cableado) y la placa
+(ruteada), enlazados entre si. Lo usamos con KiCad 10 en Windows. Los archivos
+estan en formato de KiCad 6: la primera vez pregunta si migra el formato, se le
+dice que si y no pregunta mas.
+
+Que hay en la carpeta:
+  H08_Placa.kicad_pro   el proyecto
+  H08_Placa.kicad_sch   esquematico, 26 componentes y 35 nodos
+  H08_Placa.kicad_pcb   la placa, 242 pistas y 25 puentes
+  H08.kicad_sym         simbolos propios
+  H08.pretty/           huellas propias
+  sym-lib-table, fp-lib-table   registran esas dos librerias en el proyecto
+  CONEXIONES.txt        la red completa, por nodo y pata por pata
+
+No hay que instalar ninguna libreria. Todos los simbolos y huellas que usa
+estan en H08.kicad_sym y H08.pretty, asi que abre en un KiCad recien
+instalado.
+
+
+La placa
+
+170 x 110 mm, una sola cara (todo el cobre en B.Cu). Las pistas tienen 0,9 mm
+de separacion como minimo y el troncal de +5V es de 2,5 mm. El plano de masa
+es entero, con alivio termico en cada isla. Al abrir la placa KiCad pide
+rellenar las zonas: se aprieta B.
+
+Los 25 puentes de alambre estan dibujados como vias, no como componentes. Asi
+F8 (actualizar placa desde el esquematico) no los borra. 15 son del ruteo y
+10 cosen el plano de masa.
+
+Cada huella tiene el UUID de su simbolo, por eso F8 reconoce lo que ya esta
+puesto y no agrega las huellas de nuevo encima.
+
+
+Alimentacion
+
+Los 5 V entran por la bornera J2 desde la fuente, pasan por F1 (fusible de
+4 A lento) y de ahi van a todo. Despues del fusible hay un supresor P6KE6.8A
+(D2) entre +5V y masa: si la fuente se desajusta y sube la tension, D2
+conduce y quema el fusible. No reemplaza ajustar la fuente con el tester
+antes de conectar nada.
+
+El fusible es de 4 A porque medimos 3,3 A de consumo en rafaga y una pista
+de 2,5 mm aguanta unos 4,7 A: asi corta el fusible y no la pista.
+
+Las patas 2 y 4 de la Raspberry (5 V) quedan sin conectar a proposito. La
+potencia de los servos nunca sale de la Pi.
+
+La pata V+ de los modulos PCA9685 tambien queda sin conectar en la tira de
+6. La corriente de los servos va con cable grueso por J3 y J4 hasta el borne
+de tornillo de cada modulo, porque una tira de 2,54 mm no esta hecha para
+tres amperes.
+
+
+Huellas que conviene medir
+
+Las huellas tienen las medidas de los componentes reales. Dos hay que
+verificarlas con calibre:
+
+- el modulo PCA9685: los clones cambian de medida. La tira de 6 patas es
+  estandar, pero el contorno es el del tipo Adafruit (62,5 x 25,4 mm) y no
+  tiene agujeros de sujecion. Si los queres, medi tu modulo y agregalos.
+- el portafusible: hay de 15, 21,4 y 22,6 mm entre patas. Las islas son
+  ovaladas para que entre cualquiera de 20,5 a 23,5 mm. Si el tuyo es de 15
+  hay que cambiar la huella.
+
+
+Para hacerla
+
+1. Abrir el proyecto y dejar que migre el formato.
+2. ERC en el esquematico, tiene que dar limpio.
+3. En la placa, B para rellenar el plano y DRC.
+4. Imprimir Planos/arte_bcu_espejado.pdf al 100 % y medir el contorno con
+   una regla (170 x 110).
+5. Planchar, revelar, enjuagar.
+6. Antes de perforar, apoyar los componentes de verdad sobre la placa. Es
+   la unica forma de ver una huella mal cuando todavia tiene arreglo.
+7. Perforar por diametro con Planos/taladros.pdf.
+8. Soldar primero los puentes (Planos/montaje.pdf). Van del lado de los
+   componentes y despues de los zocalos y borneras no se llega.
+9. Componentes bajos primero, despues los altos.
+10. Estañar el troncal de +5V y el borde del plano de masa.
+11. Antes de enchufar: tester en continuidad entre +5V y masa, tiene que
+    dar abierto.
+
+Ojo: nuestra placa salio espejada y en J1 (el conector de la Raspberry)
+quedaron cambiadas las columnas par e impar. No usamos el cable plano,
+cableamos pata por pata con Dupont siguiendo la funcion de cada pin.
