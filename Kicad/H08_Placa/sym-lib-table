@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "H08")(type "KiCad")(uri "${KIPRJMOD}/H08.kicad_sym")(options "")(descr "Simbolos del H-08"))
+)

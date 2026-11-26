@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "H08")(type "KiCad")(uri "${KIPRJMOD}/H08.pretty")(options "")(descr "Huellas del H-08"))
+)

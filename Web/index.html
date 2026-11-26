@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Proyecto H-08 | Restauración Sikorsky</title>
   <meta name="description" content="Proyecto de restauración del Sikorsky H-08 por alumnos del Colegio Técnico N°7 IMPA de Quilmes, Buenos Aires." />
+  <link rel="icon" type="image/png" href="img/favicon.png" />
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+  <meta name="theme-color" content="#1a1a16" />
+  <!-- Lo que se ve al compartir el link (WhatsApp, Instagram, Facebook) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Proyecto H-08" />
+  <meta property="og:title" content="Proyecto H-08 · Restauración del Sikorsky S-55" />
+  <meta property="og:description" content="Proyecto de restauración del Sikorsky H-08 por alumnos del Colegio Técnico N°7 IMPA de Quilmes, Buenos Aires." />
+  <meta property="og:url" content="https://proyecto-h08.github.io/" />
+  <meta property="og:image" content="https://proyecto-h08.github.io/img/compartir.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="es_AR" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet" />
@@ -20,6 +34,7 @@
     <ul id="navMenu">
       <li><a href="#nosotros">Nosotros</a></li>
       <li><a href="#proyecto">El Proyecto</a></li>
+      <li><a href="#documentos">Documentos</a></li>
       <li><a href="#contacto">Contacto</a></li>
     </ul>
   </nav>
@@ -44,7 +59,7 @@
         SIKORSKY<br><span class="accent">H-08</span>
       </h1>
       <p class="hero-sub" data-animate="fade-up" data-delay="200">
-        Recuperando un helicóptero histórico pieza por pieza — cabina, tablero, instrumentos originales y simulados.
+        Recuperando el tablero de un helicóptero histórico, con instrumentos impresos en 3D que se mueven con una simulación de vuelo.
         Un proyecto de preservación aeronáutica nacido en el Colegio Técnico N°7 IMPA de Quilmes.
       </p>
       <div class="hero-stats" data-animate="fade-up" data-delay="300">
@@ -88,6 +103,10 @@
         <div class="spec-row"><span class="spec-key">Estado</span><span class="spec-val">En restauración activa</span></div>
       </div>
     </div>
+    <figure class="foto-equipo" data-animate="fade-up">
+      <img src="img/equipo.webp" width="1200" height="1040" loading="lazy" alt="Los cinco integrantes del Proyecto H-08 juntos" />
+      <figcaption>// El equipo del Proyecto H-08</figcaption>
+    </figure>
   </section>
 
   <!-- ═══ EL PROYECTO ═══ -->
@@ -98,19 +117,53 @@
       <div class="fases-grid">
         <div class="fase-card" data-animate="fade-up" data-delay="100">
           <div class="fase-num">01</div>
-          <div class="fase-titulo">Restauración de cabina</div>
-          <div class="fase-desc">Recuperación estructural y estética del interior de la cabina, respetando los materiales y acabados originales de época del Sikorsky H-08.</div>
+          <div class="fase-titulo">Placa y electrónica</div>
+          <div class="fase-desc">Diseñamos y fabricamos la placa que conecta la Raspberry Pi con los servos, las luces de alerta y el motor de la brújula.</div>
         </div>
         <div class="fase-card" data-animate="fade-up" data-delay="200">
           <div class="fase-num">02</div>
           <div class="fase-titulo">Tablero de instrumentos</div>
-          <div class="fase-desc">Reconstrucción  fiel del panel de instrumentos, utilizando el instrumental disponible.</div>
+          <div class="fase-desc">Sobre la chapa original montamos réplicas de los instrumentos, impresas en 3D, con agujas que mueven servos.</div>
         </div>
         <div class="fase-card" data-animate="fade-up" data-delay="300">
           <div class="fase-num">03</div>
           <div class="fase-titulo">Simulación digital</div>
-          <div class="fase-desc">Los instrumentos sin recuperación física son replicados mediante pantallas embebidas que muestran datos funcionales.</div>
+          <div class="fase-desc">Una Raspberry Pi 5 simula el vuelo y las fallas. El tablero también se ve en una pantalla y en el celular de cada alumno.</div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ DOCUMENTOS ═══ -->
+  <section id="documentos">
+    <div class="documentos-inner">
+      <p class="section-tag" data-animate="fade-up">// Documentos</p>
+      <h2 data-animate="fade-up" data-delay="100">LEÉ EL PROYECTO</h2>
+      <div class="docs-grid" data-animate="fade-up" data-delay="200">
+        <a href="docs/Informe_descriptivo_H08.pdf" class="doc-card" target="_blank" rel="noopener">
+          <div class="doc-num">01</div>
+          <div class="doc-info">
+            <span class="doc-titulo">Informe descriptivo</span>
+            <span class="doc-desc">Cómo está hecho el tablero: hardware, programa, simulación y montaje.</span>
+          </div>
+          <span class="doc-bajar">PDF · 5,9 MB ↓</span>
+        </a>
+        <a href="docs/Manual_de_usuario_H08.pdf" class="doc-card" target="_blank" rel="noopener">
+          <div class="doc-num">02</div>
+          <div class="doc-info">
+            <span class="doc-titulo">Manual de usuario</span>
+            <span class="doc-desc">Cómo se usa el tablero: encenderlo, conectarse con el celular y manejar el vuelo.</span>
+          </div>
+          <span class="doc-bajar">PDF · 1,6 MB ↓</span>
+        </a>
+        <a href="docs/Carpeta_de_campo_H08.pdf" class="doc-card" target="_blank" rel="noopener">
+          <div class="doc-num">03</div>
+          <div class="doc-info">
+            <span class="doc-titulo">Carpeta de campo</span>
+            <span class="doc-desc">La bitácora del trabajo, día por día.</span>
+          </div>
+          <span class="doc-bajar">PDF · 3,0 MB ↓</span>
+        </a>
       </div>
     </div>
   </section>
@@ -122,7 +175,7 @@
       <h2 data-animate="fade-up" data-delay="100">SUMATE<br>AL PROYECTO</h2>
       <p data-animate="fade-up" data-delay="200">
         ¿Te gustaría colaborar con nosotros? Estamos abiertos a colaboraciones materiales o económicas.
-        Escribinos directamente a cualquier integrante del equipo.
+        Escribinos por Instagram o por mail.
       </p>
 
       <!-- Redes del proyecto -->
@@ -155,62 +208,41 @@
         <p class="section-tag">// Integrantes del equipo</p>
       </div>
       <div class="integrantes-grid" data-animate="fade-up" data-delay="200">
-
-        <a href="https://wa.me/5491125751939" class="integrante-card" target="_blank" rel="noopener">
-          <div class="integrante-avatar">FT</div>
+        <div class="integrante-card">
+          <img class="integrante-foto" src="img/taranto.webp" width="240" height="240" alt="Fausto Taranto" />
           <div class="integrante-info">
             <span class="integrante-nombre">Fausto Taranto</span>
-            <span class="integrante-tel">+54 9 11 2575-1939</span>
+            <span class="integrante-tel">Hardware · Circuito, calibración y cableado</span>
           </div>
-          <div class="integrante-wa">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-          </div>
-        </a>
-
-        <a href="https://wa.me/5491125851579" class="integrante-card" target="_blank" rel="noopener">
-          <div class="integrante-avatar">CD</div>
+        </div>
+        <div class="integrante-card">
+          <img class="integrante-foto" src="img/dacosta.webp" width="240" height="240" alt="Constantino da Costa" />
           <div class="integrante-info">
             <span class="integrante-nombre">Constantino da Costa</span>
-            <span class="integrante-tel">+54 9 11 2585-1579</span>
+            <span class="integrante-tel">Integración · Pruebas · Redes y presentación</span>
           </div>
-          <div class="integrante-wa">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-          </div>
-        </a>
-
-        <a href="https://wa.me/5491169621443" class="integrante-card" target="_blank" rel="noopener">
-          <div class="integrante-avatar">MG</div>
+        </div>
+        <div class="integrante-card">
+          <img class="integrante-foto" src="img/ghirelli.webp" width="240" height="240" alt="Mateo Ghirelli" />
           <div class="integrante-info">
             <span class="integrante-nombre">Mateo Ghirelli</span>
-            <span class="integrante-tel">+54 9 11 6962-1443</span>
+            <span class="integrante-tel">Software · Python, WiFi y simulación</span>
           </div>
-          <div class="integrante-wa">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-          </div>
-        </a>
-
-        <a href="https://wa.me/5491140970156" class="integrante-card" target="_blank" rel="noopener">
-          <div class="integrante-avatar">TL</div>
+        </div>
+        <div class="integrante-card">
+          <img class="integrante-foto" src="img/lehmann.webp" width="240" height="240" alt="Thomas Lehmann" />
           <div class="integrante-info">
             <span class="integrante-nombre">Thomas Lehmann</span>
-            <span class="integrante-tel">+54 9 11 4097-0156</span>
+            <span class="integrante-tel">Restauración mecánica · Montaje</span>
           </div>
-          <div class="integrante-wa">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-          </div>
-        </a>
-
-        <a href="https://wa.me/5491169455451" class="integrante-card" target="_blank" rel="noopener">
-          <div class="integrante-avatar">AM</div>
+        </div>
+        <div class="integrante-card">
+          <img class="integrante-foto" src="img/merodo.webp" width="240" height="240" alt="Agustín Merodo" />
           <div class="integrante-info">
             <span class="integrante-nombre">Agustín Merodo</span>
-            <span class="integrante-tel">+54 9 11 6945-5451</span>
+            <span class="integrante-tel">Relevamiento · Montaje · Documentación</span>
           </div>
-          <div class="integrante-wa">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-          </div>
-        </a>
-
+        </div>
       </div>
     </div>
   </section>

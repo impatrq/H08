@@ -1,0 +1,10 @@
+# Lo que es de CADA tablero: no se sube ni viaja en el zip
+raspberry_pi5/secreto_admin.json
+raspberry_pi5/calibracion_servos.json
+raspberry_pi5/posicion_motores.json
+raspberry_pi5/informes/
+# Lo que se genera
+__pycache__/
+*.pyc
+dist/
+*.zip

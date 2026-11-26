@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tablero H-08</title>
+<link rel="icon" href="/logo.png">
+<link rel="stylesheet" href="/estilo.css">
+<!--
+  El tablero en la página. Sirve para la pantalla de la Pi o el proyector
+  (?pantalla=1), una compu y el celular del alumno.
+  Acá no hay datos del tablero: posiciones, luces y llaves llegan por
+  /api/catalogo (nucleo/configuracion.py). Para mover un instrumento se toca ese archivo.
+-->
+<style>
+html,body{height:100%}
+body{min-height:100%}
+
+/* La chapa: se dibuja en su lienzo nominal (configuracion.PANEL_LIENZO) y después se escala entera */
+.marco{display:flex;justify-content:center;align-items:center;min-height:0;min-width:0;overflow:hidden}
+.lienzo{position:relative;flex:0 0 auto}
+.chapa{position:absolute;left:0;top:0;transform-origin:top left;border-radius:14px 80px 14px 14px;
+  background:linear-gradient(125deg,var(--chapa1) 0%,var(--chapa2) 38%,#19191a 52%,#0b0b0c 100%);
+  box-shadow:0 24px 60px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.07)}
+.chapa .hueco{position:absolute;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(0,0,0,.5) 58%,rgba(0,0,0,0) 72%)}
+.chapa .inst{position:absolute;cursor:pointer}
+/* sombra en la caja redonda y no como filtro del svg: el filtro se recalculaba
+   con cada aguja que se movía, 25 veces por cuadro en la Pi */
+.inst{border-radius:50%;box-shadow:0 6px 10px rgba(0,0,0,.7);contain:layout style}
+.inst svg{display:block;width:100%;height:100%}
+.inst.sel{box-shadow:0 0 10px 1px rgba(255,122,26,.95)}
+.inst.anom{box-shadow:0 0 11px 1px rgba(226,73,58,.95)}
+.zona{position:absolute;pointer-events:none}
+.zona.llaves{border-radius:8px;background:linear-gradient(125deg,#202022,#121213 60%);border:1px solid #2a2a2c}
+.zona.luces{border-radius:10px;background:linear-gradient(125deg,#18181a,#0c0c0d 60%);
+  box-shadow:inset 0 0 0 1.5px #3a3a3d, inset 0 3px 10px rgba(0,0,0,.8)}
+.zona.tapa{border-radius:50%;background:radial-gradient(circle at 40% 35%,#2a2a2c,#0d0d0e);
+  box-shadow:inset 0 0 0 1.5px #3a3a3d, 0 4px 10px rgba(0,0,0,.6)}
+.lamina{position:absolute;display:block;pointer-events:none}
+.lamina .ctl{cursor:pointer;pointer-events:auto}
+.lamina .ctl:hover .halo{opacity:1}
+/* luces de alerta: lámpara redonda y su nombre, en castellano */
+.luz{position:absolute;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
+.luz .lamp{width:30px;height:30px;border-radius:50%;border:3px solid #2c2c2e;
+  background:radial-gradient(circle at 40% 35%,#3a3c40,#141516);box-shadow:inset 0 2px 4px rgba(0,0,0,.8);
+  transition:background .12s, box-shadow .12s}
+.luz .nom{font-size:11px;font-weight:500;color:var(--tenue);text-align:center;line-height:1.15;width:100%}
+.luz.on .nom{color:#fff;font-weight:700}
+/* en la chapa van más chicas, arriba del panel de interruptores */
+.chapa .luz{flex-direction:row;gap:5px;justify-content:flex-start}.chapa .luz .lamp{flex:0 0 auto;width:15px;height:15px;border-width:2px}.chapa .luz .nom{font-size:8px;line-height:1.05;text-align:left;white-space:nowrap}
+.luz.on.verde .lamp{background:radial-gradient(circle at 40% 35%,#fff,#3ecf8e 50%);box-shadow:0 0 16px #3ecf8e}
+.luz.on.rojo .lamp{background:radial-gradient(circle at 40% 35%,#fff,#ff5a47 50%);box-shadow:0 0 16px #ff5a47}
+.luz.on.ambar .lamp{background:radial-gradient(circle at 40% 35%,#fff,#ffb547 50%);box-shadow:0 0 16px #ffb547}
+/* luces del tablero prendidas: brillo cálido */
+.chapa::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity .8s;
+  background:radial-gradient(ellipse 70% 55% at 50% 42%,rgba(255,178,72,.10),transparent 72%)}
+.chapa.noche::after{opacity:1}
+
+/* pantalla ancha: proyector, pantalla de la Pi, compu */
+.ancho-solo{display:none}
+body.ancho .ancho-solo{display:flex}
+body.ancho .cel-solo{display:none!important}
+body.ancho{display:grid;grid-template-columns:276px minmax(0,1fr);gap:24px;height:100%;
+  padding:20px max(20px,env(safe-area-inset-right,0px)) 0 max(20px,env(safe-area-inset-left,0px));overflow:hidden}
+.lado{flex-direction:column;gap:14px;min-height:0;overflow:hidden}
+.marcah{display:flex;align-items:center;gap:12px;padding:4px 4px 6px}
+.marcah img{width:56px;height:56px;border-radius:50%;flex:none}
+.marcah b{display:block;font-family:var(--f-titulo);font-size:22px}
+.marcah span{font-size:13px;color:var(--tenue)}
+.fasec{padding:16px;display:flex;flex-direction:column;gap:10px}
+.fasec .que{font-size:13px;color:var(--tenue)}
+.fasec .nombre{font-family:var(--f-titulo);font-weight:700;font-size:30px;line-height:1.05}
+.fasec p{margin:0;font-size:15.5px;line-height:1.45;color:var(--texto2)}
+.qrc{background:#fff;color:#0b0e12;border-radius:16px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.qrc b.t{font-family:var(--f-titulo);font-size:20px}
+.qrc img.wifi{width:170px;height:170px;display:block}
+.qrc .chico{font-size:13.5px;line-height:1.4;color:#2b3644}
+.qrc .chico b{color:#0b0e12}
+.qrc .dir{display:flex;align-items:center;gap:10px;margin-top:2px;padding-top:10px;border-top:1px solid #dfe5ec;width:100%}
+.qrc .dir img{width:64px;height:64px;flex:none}
+.qrc .dir div{text-align:left;font-size:12.5px;color:#4a5768;line-height:1.35}
+.qrc .dir div b{display:block;font-family:var(--f-numeros);font-size:19px;color:#0b0e12}
+body.ancho .derecha{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-width:0;min-height:0}
+.barra{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;min-height:48px;padding-bottom:10px}
+.barra .chipe{font-size:15px;padding:6px 14px}
+.barra .segmentos{grid-auto-columns:auto;padding:3px}
+.barra .segmentos button{height:32px;padding:0 12px;font-size:13px}
+.barra a.boton{display:inline-flex;align-items:center;text-decoration:none;min-height:38px;font-size:14px}
+.barra .boton{min-height:38px;font-size:14px}
+.escena{display:flex;gap:16px;min-height:0;min-width:0}
+.escena .marco{flex:1 1 0}
+.heli3d{flex:1 1 0;min-width:0;min-height:240px;position:relative;overflow:hidden;background:#cfd8df;border-radius:var(--radio)}
+.heli3d .lienzo3d{display:block;width:100%;height:100%;touch-action:none}
+.heli3d .cargando3d{position:absolute;inset:0;display:grid;place-items:center;color:#2b3640;font-size:14px}
+body.vista-tablero .escena .heli3d{display:none}
+body.vista-heli .escena .marco{display:none}
+@media (max-aspect-ratio: 4/3){ body.ancho.vista-dos .escena{flex-direction:column} }
+.pie{display:flex;align-items:center;gap:14px;min-height:64px;padding:10px 6px calc(10px + env(safe-area-inset-bottom,0px))}
+.pie svg{flex:none}
+.pie .txt{min-width:0;font-size:17px;color:var(--texto2);line-height:1.35}
+.pie .txt b{color:var(--texto);font-family:var(--f-titulo)}
+.pie .txt small{display:block;font-size:13.5px;color:var(--tenue)}
+.pie .val{margin-left:auto;text-align:right;white-space:nowrap;font-size:13px;color:var(--tenue)}
+.pie .val b{display:block;font-family:var(--f-numeros);font-size:24px;color:var(--texto)}
+/* reposo: un aviso en la barra, sin tapar los instrumentos */
+body.pantalla{cursor:none}
+body.pantalla .no-pantalla{display:none!important}
+@media (max-height: 760px){
+  body.ancho{grid-template-columns:240px minmax(0,1fr)}
+  .marcah img{width:44px;height:44px} .marcah b{font-size:19px}
+  .fasec .nombre{font-size:24px} .fasec p{font-size:14px}
+  .qrc img.wifi{width:128px;height:128px} .qrc .dir img{width:52px;height:52px}
+}
+@media (max-height: 620px){ .fasec p{display:none} .pie{min-height:48px} .pie .txt{font-size:15px} }
+
+/* pantalla completa (tecla F): sólo la chapa */
+body.plena{display:block;padding:0}
+body.plena .lado, body.plena .barra, body.plena .pie{display:none}
+body.plena .derecha{height:100%;display:flex}
+body.plena .escena{flex:1}
+.salirplena{position:fixed;top:12px;right:14px;z-index:80;display:none}
+body.plena .salirplena{display:block;opacity:.3}
+body.plena .salirplena:hover{opacity:1}
+
+/* celular del alumno */
+.cel{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px;
+  padding:12px max(14px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px))}
+.cab{display:flex;align-items:center;gap:10px;min-height:44px}
+.cab img{width:40px;height:40px;border-radius:50%}
+.cab b{font-family:var(--f-titulo);font-size:20px}
+.cab .esp{flex:1}
+.cab a.profe{height:44px;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--acento-texto);
+  text-decoration:none;padding:0 12px;border-radius:var(--radio-chico);background:var(--sup);border:1px solid var(--borde)}
+.fasem{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.fasem .fila{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fasem .fila b{font-family:var(--f-titulo);font-weight:600;font-size:17px}
+.fasem .fila span.n{font-size:12.5px;color:var(--tenue)}
+.fasem .chipe{font-size:12px;padding:3px 9px}
+.fasem p{margin:0;font-size:14px;line-height:1.4;color:var(--suave)}
+.grande{padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px;border-radius:18px}
+.grande .dial{width:min(236px,64vw);aspect-ratio:1;max-width:100%}
+.grande .dial .inst, .mini .inst{position:relative;width:100%;height:100%}
+.grande .tit{display:flex;align-items:baseline;gap:8px;width:100%}
+.grande h2{font-weight:600;font-size:21px;min-width:0}
+.grande .tit .esp{flex:1}
+.grande .num{font-family:var(--f-numeros);font-weight:700;font-size:28px;color:var(--texto)}
+.grande .num.ok{color:#7ee2b0} .grande .num.alerta{color:var(--alerta)} .grande .num.mal{color:#ff8a7a}
+.grande .uni{font-size:15px;color:var(--tenue)}
+.grande p{margin:0;font-size:15px;line-height:1.45;color:var(--texto2);width:100%}
+.grande .chips{display:flex;gap:6px;flex-wrap:wrap;width:100%}
+.grande .chips span{font-size:13px;font-weight:500;padding:4px 10px;border-radius:999px}
+.grande .chips .v{background:var(--ok-suave);color:var(--ok-texto)}
+.grande .chips .r{background:var(--peligro-suave);color:var(--peligro-texto)}
+.grande .chips .a{background:var(--alerta-suave);color:var(--alerta-texto)}
+.grande .chips .x{background:var(--sup2);color:var(--suave)}
+.grande .falla{width:100%;background:var(--peligro-suave);color:var(--peligro-texto);border-radius:var(--radio-chico);padding:8px 10px;font-size:14px;font-weight:600}
+.grande .heli{width:100%;height:min(62vh,420px);border-radius:12px;position:relative}
+.tira{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tira::-webkit-scrollbar{display:none}
+.mini{flex:0 0 auto;width:72px;display:flex;flex-direction:column;align-items:center;gap:5px;background:transparent;border:0;padding:0;cursor:pointer;color:var(--suave)}
+.mini .caja{width:64px;height:64px;border-radius:50%;display:block}
+.mini.sel .caja{box-shadow:0 0 0 3px var(--acento);border-radius:50%}
+.mini span.l{font-size:12px;font-weight:500;line-height:1.15;text-align:center}
+.mini.sel span.l{color:var(--acento-texto);font-weight:700}
+.lucesm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lucesm .luz{position:relative;background:var(--sup);border:1px solid var(--borde);border-radius:12px;padding:12px 4px 10px}
+.lucesm .luz.sel{border-color:var(--acento)}
+.lucesm .luz .nom{white-space:normal}
+.completo{padding:10px;display:flex;flex-direction:column;gap:8px}
+.completo .marco{width:100%}
+.completo summary{cursor:pointer;font-weight:600;color:var(--suave);font-size:14px;padding:4px 2px}
+.registro{padding:10px 12px}
+.registro summary{cursor:pointer;font-weight:600;color:var(--suave);font-size:14px}
+.registro .lin{font-size:13.5px;line-height:1.45;color:var(--texto2);padding:5px 0;border-bottom:1px solid var(--linea)}
+.registro .lin:last-child{border-bottom:0}
+.registro .ts{font-family:var(--f-numeros);color:var(--acento-texto);margin-right:6px;font-size:12px}
+.cel .pista{font-size:13px;color:var(--tenue);text-align:center;margin:0}
+/* renglón de ayuda cuando la página la abrió el celular al conectarse */
+#ayudaRed{position:sticky;top:0;z-index:50;display:none;align-items:flex-start;gap:10px;background:#ff7a1a;color:#1a0c00;
+  font-size:14px;line-height:1.35;padding:9px 12px}
+#ayudaRed.vis{display:flex}
+#ayudaRed button{margin-left:auto;background:none;border:0;font-size:20px;line-height:1;color:#1a0c00;cursor:pointer;padding:0 4px}
+.qrc .cel{font-size:13px;font-weight:600;color:#2b3644}
+.qrc .cel.lleno{color:#c62828}
+</style>
+</head>
+<body>
+<div id="ayudaRed" role="status"><span>Estás en la red del tablero. No tiene internet: es normal.
+  Si cerrás esta ventana, <b>apagá los datos móviles</b> y escribí <b id="ayudaDir">10.55.0.1</b> en el navegador.</span>
+  <button type="button" aria-label="Cerrar">×</button></div>
+
+<!-- pantalla ancha -->
+<aside class="lado ancho-solo" aria-label="Fase y conexión">
+  <div class="marcah"><img src="/logo.png" alt="Logo del proyecto H-08">
+    <div><b>Proyecto H-08</b><span id="subtit">Sikorsky H-19A · EEST N° 7</span></div></div>
+  <section class="tarjeta fasec" aria-live="polite">
+    <span class="que" id="fQue">Conectando con el tablero…</span>
+    <span class="nombre" id="fNom">—</span>
+    <div class="avance"><i id="fAv"></i></div>
+    <p id="fTxt"></p>
+  </section>
+  <section class="qrc">
+    <b class="t">Miralo en tu celular</b>
+    <img class="wifi" src="/qr_wifi.svg" alt="Código QR de la red del tablero">
+    <span class="chico">Escaneá con la cámara: el tablero se abre solo.</span>
+    <span class="chico">Red <b class="qRed">Tablero-H08</b> · clave <b class="qClave"></b></span>
+    <div class="dir"><img src="/qr.svg" alt="Código QR de la página" id="qrUrl">
+      <div>o escribí en el navegador<b class="qDir">10.55.0.1</b></div></div>
+    <span class="cel" id="qCel" hidden></span>
+  </section>
+</aside>
+
+<div class="derecha ancho-solo">
+  <div class="barra">
+    <span class="chipe" id="cEstado"><span class="pt"></span><span>Conectando</span></span>
+    <span class="chipe acento" id="cProfe" hidden><span class="pt"></span>Profesor con el mando</span>
+    <span class="chipe" id="cHora">00:00</span>
+    <span class="segmentos" role="group" aria-label="Qué mostrar">
+      <button type="button" data-vista="tablero" title="Tecla 1">Tablero</button>
+      <button type="button" data-vista="dos" title="Tecla 2">Los dos</button>
+      <button type="button" data-vista="heli" title="Tecla 3">Helicóptero</button>
+    </span>
+    <a class="boton no-pantalla" id="aProfeA" href="/mando" title="Soy el profesor">Profesor</a>
+    <button type="button" class="boton no-pantalla" id="bPlena" title="Tecla F">Pantalla completa</button>
+  </div>
+  <div class="escena" id="escena">
+    <div class="marco" id="marco"><div class="lienzo" id="lienzo"></div></div>
+    <div class="heli3d" id="heli3d"></div>
+  </div>
+  <div class="pie">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff9a4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+    <div class="txt" id="pTxt">Cada instrumento está en el mismo agujero que en el tablero real. Tocalo en tu celular para ver qué mide.</div>
+    <div class="val" id="pVal"></div>
+  </div>
+</div>
+<button type="button" class="boton salirplena" id="bSalir">Salir de pantalla completa</button>
+
+<!-- celular -->
+<div class="cel cel-solo">
+  <header class="cab">
+    <img src="/logo.png" alt="Logo del proyecto H-08">
+    <b>Proyecto H-08</b>
+    <span class="esp"></span>
+    <a class="profe" href="/mando" id="aProfeC" title="Soy el profesor"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff9a4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg><span id="aProfeTxt">Profesor</span></a>
+  </header>
+
+  <section class="tarjeta fasem" aria-live="polite">
+    <div class="fila"><span class="chipe" id="mEstado"><span class="pt"></span><span>Conectando</span></span>
+      <b id="mNom">—</b><span class="n" id="mN"></span></div>
+    <div class="avance"><i id="mAv"></i></div>
+    <p id="mTxt"></p>
+  </section>
+
+  <section class="tarjeta grande" id="grande">
+    <div class="dial" id="gDial"></div>
+    <div class="tit"><h2 id="gNom">—</h2><span class="esp"></span><span class="num" id="gNum"></span><span class="uni" id="gUni"></span></div>
+    <div class="falla" id="gFalla" hidden>Indicación fallada: este instrumento está marcando mal.</div>
+    <p id="gDesc"></p>
+    <div class="chips" id="gChips"></div>
+    <div class="heli" id="gHeli" hidden></div>
+  </section>
+
+  <nav class="segmentos" aria-label="Grupos de instrumentos" id="grupos">
+    <button type="button" data-g="VUELO" class="on">Vuelo</button>
+    <button type="button" data-g="MOTOR">Motor</button>
+    <button type="button" data-g="LUCES">Luces</button>
+    <button type="button" data-g="3D">3D</button>
+  </nav>
+  <div class="tira" id="tira"></div>
+  <div class="lucesm" id="lucesm" hidden></div>
+  <p class="pista" id="pista">Tocá un instrumento para verlo grande.</p>
+
+  <details class="tarjeta completo" id="completo">
+    <summary>Ver el tablero completo</summary>
+    <div class="marco" id="marcoCel"><div class="lienzo" id="lienzoCel"></div></div>
+  </details>
+
+  <details class="tarjeta registro" id="registro">
+    <summary>Qué fue pasando</summary>
+    <div id="log"></div>
+  </details>
+</div>
+
+<div class="reconectando" id="reconectando" role="status"><span class="giro"></span>Reconectando con el tablero…</div>
+<div class="apagando" id="apagando" role="alert"><div><b>Apagando el tablero</b><p id="apagTxt">Esperá a que la pantalla quede negra para apagar la zapatilla.</p></div></div>
+<div class="avisoLlave" id="avisoLlave" role="status"></div>
+
+<script>
+"use strict";
+// vuelo3d.js lee CAT, EST, V, giroAguja, instr y luzEncendida
+let CAT=null, EST=null;
+// ?pantalla=1 es la pantalla de la Pi: sin puntero, siempre ancha, y se
+// recarga sola cuando el tablero reinicia (así tiene la última versión)
+const MODO=(()=>{
+  const q=new URLSearchParams(location.search);
+  return {pantalla:q.get('pantalla')==='1'||q.get('kiosco')==='1'};
+})();
+const ANCHO = MODO.pantalla || window.matchMedia('(min-width: 900px) and (min-height: 520px)').matches;
+document.body.classList.toggle('ancho', ANCHO);
+document.body.classList.toggle('pantalla', MODO.pantalla);
+const $=id=>document.getElementById(id);
+let timerPoll=null, fijado=null;
+
+// DIN: atributos animados, TXT: textos. Cada uno sabe su grupo
+// ('chapa', 'grande', 'mini', 'cel') para poder rehacer uno solo
+const DIN=[], TXT=[];
+let vistos=new Set();
+
+// todos los instrumentos se dibujan en 200 x 200
+const C=100;
+function pol(a,r){const t=(a-90)*Math.PI/180;return [C+r*Math.cos(t), C+r*Math.sin(t)];}
+// misma tabla de calibración que el servo, así el dibujo tiene la misma no linealidad
+function interp(x,t){
+  if(!t||!t.length) return 0;
+  if(x<=t[0][0]) return t[0][1];
+  if(x>=t[t.length-1][0]) return t[t.length-1][1];
+  let i=1; while(i<t.length && t[i][0]<x) i++;
+  const [x0,y0]=t[i-1],[x1,y1]=t[i];
+  return x1===x0 ? y1 : y0+(y1-y0)*(x-x0)/(x1-x0);
+}
+function luzEncendida(s){ return !!(s && ((typeof s.ang==='number')?s.ang:s.v)>=0.5); }
+function V(id){ const s=EST&&EST.instrumentos?EST.instrumentos[id]:null; return s?s.v:0; }
+function instr(id){ return (CAT.instrumentos||[]).find(x=>x.id===id); }
+function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// piezas: bisel, carátula, aguja y vidrio
+function defs(){
+  return `<defs>
+    <radialGradient id="bis" cx=".3" cy=".24" r=".8">
+      <stop offset="0" stop-color="#6a6e75"/><stop offset=".5" stop-color="#1f2023"/>
+      <stop offset=".76" stop-color="#0d0e10"/></radialGradient>
+    <linearGradient id="vid" x1=".15" y1="0" x2=".85" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".18"/>
+      <stop offset=".36" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  </defs>`;
+}
+function bisel(){
+  return `<circle cx="100" cy="100" r="99" fill="url(#bis)" stroke="#8d929a" stroke-width="1.6"/>
+          <circle cx="100" cy="100" r="88" fill="#0a0a0b"/>`;
+}
+function vidrio(){ return `<circle cx="100" cy="100" r="88" fill="url(#vid)" pointer-events="none"/>`; }
+// La aguja se dibuja apuntando arriba; el ángulo va en el transform del grupo,
+// que es lo único que se toca por cuadro.
+const AGUJA_D='M10 0 L12.6 84 L7.4 84 Z M4 89 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0 Z M7.8 92 H12.2 V110 H7.8 Z M5.5 112.5 a4.5 4.5 0 1 0 9 0 a4.5 4.5 0 1 0 -9 0 Z';
+function aguja(cls,largo,ancho){
+  const k=largo/89, kx=k*(ancho||1);
+  return `<g class="${cls}" transform="rotate(0 100 100)"><path d="${AGUJA_D}" fill="#fff"
+    stroke="#000" stroke-opacity=".35" stroke-width="${(0.8/k).toFixed(2)}"
+    transform="translate(${(100-10*kx).toFixed(2)} ${(100-89*k).toFixed(2)}) scale(${kx.toFixed(3)} ${k.toFixed(3)})"/></g>`;
+}
+function D(cls,get,fmt,circ){ return {cls,get,fmt,circ:!!circ}; }
+const ROT = a => `rotate(${a.toFixed(2)} 100 100)`;
+// cada copia lleva sus propios id: si comparten uno y la primera está oculta,
+// la segunda se queda sin degradado
+let _uid=0;
+function unico(svg){
+  const s='_'+(++_uid);
+  return svg.replace(/id="([\w-]+)"/g,(m,a)=>`id="${a}${s}"`).replace(/url\(#([\w-]+)\)/g,(m,a)=>`url(#${a}${s})`);
+}
+
+// Carátulas impresas, las mismas del tablero físico. La aguja hace la misma
+// cuenta que caratulas.py: calibración (0..180), barrido real, ángulo de dibujo
+function barridoDe(it){ const b=it.barrido; if(b==='CONT') return 360; return (typeof b==='number')?b:180; }
+function angDibujo(it,a){
+  const B=barridoDe(it), c=(typeof it.centro==='number')?it.centro:90;
+  const ad=(it.tipo==='MOTOR')?a:a*B/180;
+  return B>=359.9 ? c-ad : c+B/2-ad;
+}
+function giroAguja(it,v){ return 90-angDibujo(it, interp(v, it.cal||[])); }
+function fondoCaratula(it,c){
+  const k=88/c.R, L=c.L*k, o=100-L/2;
+  return defs()+bisel()+`<image href="/caratulas/${c.archivo}" x="${o.toFixed(2)}" y="${o.toFixed(2)}"
+      width="${L.toFixed(2)}" height="${L.toFixed(2)}"/>`;
+}
+function carAguja(it,c){
+  return {svg:fondoCaratula(it,c)+aguja('d1',74)+vidrio(), din:[ D('d1',()=>giroAguja(it,V(it.id)),ROT) ]};
+}
+function carTacometro(it,c){
+  // el tablero tiene solo la aguja del motor; acá sumamos la del rotor,
+  // más corta, para ver patinar el embrague
+  const r=instr('TACH_ROT');
+  let s=fondoCaratula(it,c);
+  if(r) s+=aguja('dr',50,1.05);
+  s+=aguja('de',74)+vidrio();
+  const din=[ D('de',()=>giroAguja(it,V('TACH_ENG')),ROT) ];
+  if(r) din.unshift(D('dr',()=>giroAguja(r,V('TACH_ROT')),ROT));
+  return {svg:s, din};
+}
+function carBrujula(it,c){
+  // rosa fija impresa, el paso a paso mueve una aguja que da la vuelta entera
+  return {svg:fondoCaratula(it,c)+aguja('dg',72)+vidrio(), din:[ D('dg',()=>giroAguja(it,V('COMPASS')),ROT,true) ]};
+}
+function carViraje(it,c){
+  // en la física la bola está impresa; acá la tapamos y dibujamos una que rueda
+  const sl=instr('SLIP');
+  const k=88/c.R, rb=0.535*c.R*k, rbola=0.070*c.R*k;
+  let s=fondoCaratula(it,c);
+  if(sl){
+    s+=`<circle cx="100" cy="${(100+rb).toFixed(2)}" r="${(rbola+1).toFixed(2)}" fill="#2E2E2C"/>
+        <g class="db" transform="rotate(0 100 100)">
+        <circle cx="100" cy="${(100+rb).toFixed(2)}" r="${rbola.toFixed(2)}" fill="#111" stroke="#F4F4F2" stroke-width=".9"/></g>`;
+  }
+  s+=aguja('dt',68)+vidrio();
+  const din=[ D('dt',()=>giroAguja(it,V('TURN')),ROT) ];
+  if(sl) din.push(D('db',()=>90-interp(V('SLIP'),sl.cal||[]),ROT));
+  return {svg:s, din};
+}
+function carReloj(it,c){
+  const T=()=>EST?EST.t:0;
+  return {svg:fondoCaratula(it,c)+aguja('dho',42,1.25)+aguja('dmi',64)+aguja('dse',70,0.55)+vidrio(),
+          din:[ D('dho',()=>(T()/3600%12)*30,ROT,true), D('dmi',()=>(T()/60%60)*6,ROT,true),
+                D('dse',()=>(T()%60)*6,ROT,true) ]};
+}
+// si el servidor no tiene la carátula, escala simple de repuesto
+function dialSimple(it){
+  const cal=it.cal||[], a0=cal.length?cal[0][1]:0, a1=cal.length?cal[cal.length-1][1]:180, span=(a1-a0)||180;
+  const ang=v=>-135+((interp(v,cal)-a0)/span)*270;
+  let s=defs()+bisel();
+  for(let i=0;i<=10;i++){ const a=-135+i*27, [x0,y0]=pol(a,80), [x1,y1]=pol(a,i%5?74:68);
+    s+=`<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="#d9dee6" stroke-width="${i%5?1.2:2.4}"/>`; }
+  s+=`<text x="100" y="150" text-anchor="middle" font-size="11" fill="#9aa8b8" font-family="Inter,sans-serif">${esc(it.unidad||'')}</text>`;
+  return {svg:s+aguja('d1',72)+vidrio(), din:[ D('d1',()=>ang(V(it.id)),ROT) ]};
+}
+
+// Horizonte: cielo y tierra giran con el alabeo y suben o bajan con el cabeceo.
+const PX_GRADO=2.0;
+function dialHorizonte(it){
+  let s=defs()+bisel();
+  s+=`<clipPath id="cH"><circle cx="100" cy="100" r="88"/></clipPath>`;
+  s+=`<defs><linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#2a5f9e"/><stop offset="1" stop-color="#4b8fd6"/></linearGradient></defs>`;
+  s+=`<g clip-path="url(#cH)"><g class="dh" transform="rotate(0 100 100)"><g class="dp" transform="translate(0 0)">
+      <rect x="-120" y="-220" width="440" height="320" fill="url(#cielo)"/>
+      <rect x="-120" y="100" width="440" height="320" fill="#6e4a26"/>
+      <rect x="-120" y="99" width="440" height="2.2" fill="#f4f2ea"/>`;
+  for(const g of [-20,-15,-10,-5,5,10,15,20]){
+    const y=100-g*PX_GRADO, w=(Math.abs(g)%10===0)?24:12;
+    s+=`<rect x="${100-w}" y="${(y-0.8).toFixed(1)}" width="${2*w}" height="1.6" fill="#f4f2ea" opacity=".9"/>`;
+    if(Math.abs(g)%10===0)
+      s+=`<text x="${100-w-4}" y="${(y+3.4).toFixed(1)}" text-anchor="end" font-size="9" fill="#f4f2ea" font-family="Inter,sans-serif" font-weight="600">${Math.abs(g)}</text>
+          <text x="${100+w+4}" y="${(y+3.4).toFixed(1)}" font-size="9" fill="#f4f2ea" font-family="Inter,sans-serif" font-weight="600">${Math.abs(g)}</text>`;
+  }
+  s+=`</g></g></g>`;
+  // avioncito, fijo
+  s+=`<g fill="#ff7a1a"><rect x="38" y="97" width="44" height="6" rx="3"/><rect x="118" y="97" width="44" height="6" rx="3"/>
+      <circle cx="100" cy="100" r="6"/></g>`;
+  // armado simple: el de verdad deja el cabeceo en 0
+  if(CAT.cabeceo_fijo)
+    s+=`<g><title>En el instrumento del tablero el cabeceo está fijo en 0: sólo gira con el alabeo.</title>
+        <rect x="52" y="160" width="96" height="13" rx="6.5" fill="#000" opacity=".55"/>
+        <text x="100" y="169.4" text-anchor="middle" font-size="7.4" fill="#f4f2ea" font-family="Inter,sans-serif" font-weight="600" letter-spacing=".3">CABECEO FIJO EN EL TABLERO</text></g>`;
+  s+=vidrio();
+  const lim=v=>Math.max(-20,Math.min(20,v));
+  return {svg:s, din:[ D('dh',()=>-V('ATT_ROLL'),ROT),
+                       D('dp',()=>lim(V('ATT_PITCH'))*PX_GRADO, y=>`translate(0 ${y.toFixed(2)})`) ]};
+}
+const CON_CARATULA={aguja:carAguja, altimetro:carAguja, cdi:carAguja, tacometro:carTacometro,
+                    brujula:carBrujula, viraje:carViraje, reloj:carReloj};
+function fabricar(it){
+  if(it.dial==='horizonte') return dialHorizonte(it);
+  const c=(CAT.caratulas||{})[it.id], f=CON_CARATULA[it.dial||'aguja'];
+  return (c&&f) ? f(it,c) : dialSimple(it);
+}
+
+// monta un instrumento en un contenedor y anota sus partes animadas
+function montar(raiz, din, txt, grupo){
+  (din||[]).forEach(d=>{
+    const el=raiz.querySelector('.'+d.cls); if(!el) return;
+    const x={el, attr:d.attr||'transform', fmt:d.fmt, get:d.get, circ:!!d.circ, a:NaN, o:0, grupo};
+    const v=d.get(); x.o=x.a=(typeof v==='number'&&isFinite(v))?v:0; aplicar(x);
+    DIN.push(x);
+  });
+  (txt||[]).forEach(d=>{ const el=raiz.querySelector('.'+d.cls); if(el) TXT.push({el,get:d.get,ult:null,grupo}); });
+}
+function quitarGrupo(grupo){
+  for(let i=DIN.length-1;i>=0;i--) if(DIN[i].grupo===grupo) DIN.splice(i,1);
+  for(let i=TXT.length-1;i>=0;i--) if(TXT[i].grupo===grupo) TXT.splice(i,1);
+}
+function dialEn(cont, it, grupo, clase){
+  const d=fabricar(it);
+  cont.innerHTML=`<div class="inst ${clase||''}" data-inst="${it.id}"><svg viewBox="0 0 200 200">${unico(d.svg)}</svg></div>`;
+  montar(cont.querySelector('svg'), d.din, d.txt, grupo);
+}
+
+// Panel de conmutadores: las llaves siguen al piloto virtual. Usa las
+// coordenadas de la chapa, así los números de configuracion.py entran tal cual.
+function senal(nombre){
+  const m=(EST&&EST.mandos)||{};
+  switch(nombre){
+    case 'bateria':   return m.bateria?1:0;
+    case 'generador': return m.generador?1:0;
+    case 'energia':   return (EST&&EST.energia_ok)?1:0;
+    case 'bomba':     return m.bomba?1:0;
+    case 'arrancador':return m.arrancador?1:0;
+    case 'embrague':  return m.embrague?1:0;
+    case 'luces_nivel': return Math.max(0, Math.min(1, m.luces||0));
+    case 'luces':     return (m.luces>0.05)?1:0;
+    case 'magnetos':  return m.magnetos||0;
+    case 'tanque':    return (m.tanque===undefined)?2:m.tanque;
+    // el único disyuntor que salta es el del generador
+    case 'cb_gen':    return (V('LT_GEN')>=0.5)?1:0;
+    default:          return 0;
+  }
+}
+function txtSVG(x,y,t,tam,anchor,color,peso){
+  return `<text x="${x}" y="${y}" font-size="${tam}" text-anchor="${anchor||'middle'}" fill="${color||'#c9d2dc'}"
+    font-weight="${peso||700}" letter-spacing=".6" font-family="Inter,sans-serif">${esc(t)}</text>`;
+}
+// texto chico de los rótulos del Main Switch Panel: sin espaciado entre letras
+function tchico(x,y,t,tam,color){
+  return `<text x="${x}" y="${y}" font-size="${tam}" text-anchor="middle" fill="${color||'#d6dde3'}" font-weight="700" font-family="Inter,sans-serif">${esc(t)}</text>`;
+}
+function dibujarConmutadores(lista){
+  // degradés de las piezas (perillas, botones, biseles cromados)
+  let s=`<defs><radialGradient id="gPer" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#5a5d63"/><stop offset=".55" stop-color="#26282c"/><stop offset="1" stop-color="#0e0f11"/></radialGradient>
+    <radialGradient id="gBot" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#6a6d73"/><stop offset=".5" stop-color="#2a2c30"/><stop offset="1" stop-color="#0b0c0d"/></radialGradient>
+    <linearGradient id="gCromo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2f4f6"/><stop offset=".45" stop-color="#8d939a"/><stop offset="1" stop-color="#d9dde1"/></linearGradient>
+    <radialGradient id="gLente" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#9b5a3c"/><stop offset="1" stop-color="#3a1c12"/></radialGradient></defs>`, din=[];
+  for(const c of lista){
+    const [x,y]=c.pos, [w,h]=c.tam;
+    // el rótulo entra en su celda: achica la letra si el nombre es largo
+    const largo=Math.max(String(c.rot||'').length, String(c.rot2||'').length, 1);
+    const fr=Math.min(9.5, (w-6)/(largo*0.84));
+    // nombre de la llave: una línea, o dos si tiene rot2 (BOMBA / COMBUSTIBLE)
+    const nombre=(cx,yb)=> c.rot2 ? txtSVG(cx, yb-6, c.rot, Math.min(fr,8))+txtSVG(cx, yb+3, c.rot2, Math.min(fr,8)) : txtSVG(cx, yb, c.rot, fr);
+    if(c.tipo==='placa'){
+      s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="#ff7a1a"/>`;
+      s+=txtSVG(x+w/2, y+h/2+3.6, c.texto, 10, 'middle', '#1a0c00', 700);
+      continue;
+    }
+    if(c.tipo==='rotulo'){ s+=txtSVG(x+w/2, y+9, c.texto, 9.5, 'middle', '#9aa8b8', 700); continue; }
+    if(c.tipo==='nota') continue;
+    if(c.tipo==='texto'){ s+=tchico(x, y+h*0.35, c.texto, h); continue; }
+    if(c.tipo==='cartel'){
+      s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#c9d2dc" stroke-width=".7"/>`;
+      (c.lineas||[]).forEach((t,i,a)=>{ s+=tchico(x+w/2, y+h/2+1.6+(i-(a.length-1)/2)*5.6, t, 4.6); });
+      continue;
+    }
+    const g0=`<g class="ctl" data-sw="${c.id}">
+        <rect class="halo" x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="#ff7a1a" fill-opacity=".14" opacity="0"/>
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent"/>`;
+    // mandos chicos del Main Switch Panel, copiados del manual
+    const rotulos=(cx,yb,lin,t)=>{ (lin||[]).forEach((r,i,a)=>{ s+=tchico(cx, yb-(a.length-1-i)*5, r, t||4.4); }); };
+    if(c.tipo==='tog'){
+      const cx=x+w/2, cy=y+26;
+      s+=g0; rotulos(cx, cy-10.5, c.lin);
+      const hx=[0,1,2,3,4,5].map(i=>{const a=Math.PI/3*i+Math.PI/6; return (cx+4.6*Math.cos(a)).toFixed(2)+','+(cy+4.6*Math.sin(a)).toFixed(2);}).join(' ');
+      s+=`<circle cx="${cx}" cy="${cy}" r="6.2" fill="#3a3d42" stroke="#1a1b1d" stroke-width=".6"/>
+          <polygon points="${hx}" fill="url(#gCromo)" stroke="#4b4f55" stroke-width=".4"/>
+          <g class="sw${c.id}" transform="rotate(0 ${cx} ${cy})"><rect x="${cx-1.6}" y="${cy-9.5}" width="3.2" height="9.5" rx="1.5" fill="url(#gCromo)" stroke="#5d6268" stroke-width=".4"/></g>
+          <circle cx="${cx}" cy="${cy}" r="1.8" fill="#1a1b1d"/></g>`;
+      din.push({cls:'sw'+c.id, get:()=>senal(c.senal)?0:180, fmt:a=>`rotate(${a.toFixed(2)} ${cx} ${cy})`});
+      continue;
+    }
+    if(c.tipo==='perilla'){
+      const cx=x+w/2, cy=y+36, R=9.5, Ra=13;
+      s+=g0; rotulos(cx, cy-17.5, c.lin);
+      const p0=[cx+Ra*Math.cos(Math.PI*0.75), cy+Ra*Math.sin(Math.PI*0.75)], p1=[cx+Ra*Math.cos(Math.PI*0.25), cy+Ra*Math.sin(Math.PI*0.25)];
+      s+=`<path d="M${p0[0].toFixed(1)},${p0[1].toFixed(1)} A${Ra},${Ra} 0 1 1 ${p1[0].toFixed(1)},${p1[1].toFixed(1)}" fill="none" stroke="#c9d2dc" stroke-width=".8"/>`;
+      s+=tchico(cx-15, cy+17, c.izq||'APAG', 4, '#9aa8b8')+tchico(cx+15, cy+17, c.der||'MÁX', 4, '#9aa8b8');
+      s+=`<circle cx="${cx+.8}" cy="${cy+1.4}" r="${R+.6}" fill="#000" opacity=".45"/>
+          <g class="sw${c.id}" transform="rotate(0 ${cx} ${cy})"><circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#gPer)" stroke="#0a0a0b" stroke-width=".8" stroke-dasharray="1.1 .9"/>
+            <circle cx="${cx}" cy="${cy}" r="${R-2.6}" fill="url(#gPer)" stroke="#45484d" stroke-width=".5"/>
+            <rect x="${cx-1.1}" y="${cy-R+.8}" width="2.2" height="7.5" rx="1.1" fill="#f0f1ea"/></g></g>`;
+      din.push({cls:'sw'+c.id, get:()=>-135+270*(senal(c.senal)||0), fmt:a=>`rotate(${a.toFixed(2)} ${cx} ${cy})`});
+      continue;
+    }
+    if(c.tipo==='guardam'){
+      const cx=x+w/2, cy=y+h/2, gw=20, gh=36, hy=cy-gh/2;
+      s+=g0+`<rect x="${cx-gw/2}" y="${hy}" width="${gw}" height="${gh}" rx="2" fill="#1d1e21" stroke="#3a3c40" stroke-width=".6"/>
+          <g class="sw${c.id}" transform="rotate(0 ${cx} ${cy})"><rect x="${cx-1.7}" y="${cy-9}" width="3.4" height="9" rx="1.6" fill="#e3e5dc"/></g>
+          <g class="gu${c.id}" transform="scale(1 1)">
+            <rect x="${cx-gw/2}" y="${hy}" width="${gw}" height="${gh}" rx="2.5" fill="#b8372a" stroke="#1a1a1b" stroke-width="1.2"/>
+            <text x="${cx}" y="${cy}" transform="rotate(90 ${cx} ${cy})" font-size="5" text-anchor="middle" dominant-baseline="middle" fill="#f2d7d2" font-weight="700" font-family="Inter,sans-serif">${esc(c.tapa||'')}</text></g></g>`;
+      din.push({cls:'gu'+c.id, get:()=>senal(c.senal)?0.22:1, fmt:k=>`translate(0 ${hy}) scale(1 ${k.toFixed(3)}) translate(0 ${-hy})`});
+      din.push({cls:'sw'+c.id, get:()=>senal(c.senal)?0:180, fmt:a=>`rotate(${a.toFixed(2)} ${cx} ${cy})`});
+      continue;
+    }
+    if(c.tipo==='lampara'||c.tipo==='boton'){
+      const cx=x+w/2, cy=y+h/2;
+      s+=g0+(c.tipo==='lampara'
+        ? `<circle cx="${cx+.6}" cy="${cy+1}" r="5.8" fill="#000" opacity=".45"/><circle cx="${cx}" cy="${cy}" r="5.6" fill="url(#gCromo)" stroke="#5d6268" stroke-width=".5"/>
+             <circle cx="${cx}" cy="${cy}" r="3.4" fill="url(#gLente)" stroke="#2a2b2e" stroke-width=".5"/><circle cx="${cx-1.1}" cy="${cy-1.2}" r="1" fill="#fff" opacity=".55"/>`
+        : `<circle cx="${cx+.7}" cy="${cy+1.2}" r="6.2" fill="#000" opacity=".45"/><circle cx="${cx}" cy="${cy}" r="6.2" fill="#121315" stroke="#3a3c40" stroke-width=".6"/>
+             <circle cx="${cx}" cy="${cy}" r="4.6" fill="url(#gBot)"/><ellipse cx="${cx-1.4}" cy="${cy-1.7}" rx="1.8" ry="1.1" fill="#fff" opacity=".18"/>`)+`</g>`;
+      continue;
+    }
+    // palanca: ON arriba, OFF abajo
+    if(c.tipo==='palanca'){
+      const cx=x+w/2, cy=y+40;
+      s+=g0+nombre(cx, y+11);
+      s+=`<rect x="${cx-10}" y="${cy-14}" width="20" height="28" rx="4" fill="#070708" stroke="#000"/>`;
+      s+=txtSVG(cx+12, cy-7, 'ENC', 5.2, 'start', '#7f8a96', 600)+txtSVG(cx+12, cy+11, 'APAG', 5.2, 'start', '#7f8a96', 600);
+      s+=`<g class="sw${c.id}" transform="rotate(0 ${cx} ${cy})">
+            <rect x="${cx-3.5}" y="${cy-12}" width="7" height="12" rx="3" fill="#e3e5dc" stroke="#6b6e64" stroke-width=".6"/></g>
+          <circle cx="${cx}" cy="${cy}" r="3.2" fill="#2a2b2e"/>`;
+      if(c.sub) s+=txtSVG(cx, y+h-6, c.sub, 6.5, 'middle', '#7f8a96', 600);
+      s+=`</g>`;
+      din.push({cls:'sw'+c.id, get:()=>senal(c.senal)?0:180, fmt:a=>`rotate(${a.toFixed(2)} ${cx} ${cy})`});
+    }
+    else if(c.tipo==='guarda'){
+      const cx=x+w/2, cy=y+44, hy=cy-16;
+      s+=g0+nombre(cx, y+11);
+      s+=`<rect x="${cx-15}" y="${cy-16}" width="30" height="32" rx="5" fill="#070708" stroke="#000"/>
+          <g class="sw${c.id}" transform="rotate(0 ${cx} ${cy})">
+            <rect x="${cx-3.5}" y="${cy-12}" width="7" height="12" rx="3" fill="#e3e5dc"/></g>`;
+      // tapa de seguridad roja: bisagra arriba, se levanta hacia la izquierda
+      s+=`<g class="gu${c.id}" transform="rotate(0 ${cx} ${hy})">
+            <rect x="${cx-15}" y="${hy}" width="30" height="30" rx="5" fill="#b8372a" stroke="#1a1a1b" stroke-width="2.5"/>
+            <rect x="${cx-10}" y="${hy+5}" width="20" height="4" rx="2" fill="#d84a37"/></g>`;
+      if(c.sub) s+=txtSVG(cx, y+h-4, c.sub, 6.5, 'middle', '#7f8a96', 600);
+      s+=`</g>`;
+      din.push({cls:'gu'+c.id, get:()=>senal(c.senal)?28:0, fmt:a=>`rotate(${a.toFixed(2)} ${cx} ${hy})`});
+      din.push({cls:'sw'+c.id, get:()=>senal(c.senal)?0:180, fmt:a=>`rotate(${a.toFixed(2)} ${cx} ${cy})`});
+    }
+    else if(c.tipo==='rotativo'){
+      const cx=x+w/2, cy=y+48, R=Math.min(15, w/2-12), n=c.opciones.length, ext=60;
+      s+=g0+nombre(cx, y+11);
+      c.opciones.forEach((o,i)=>{
+        const a=-ext+(n>1?(i*2*ext/(n-1)):0), rad=(a-90)*Math.PI/180;
+        const tx=cx+(R+10)*Math.cos(rad), ty=cy+(R+10)*Math.sin(rad);
+        s+=txtSVG(tx.toFixed(1), (ty+2.2).toFixed(1), o[0], 6, 'middle', '#9aa8b8', 600);
+      });
+      s+=`<g class="sw${c.id}" transform="rotate(0 ${cx} ${cy})">
+            <circle cx="${cx}" cy="${cy}" r="${R}" fill="#1c1d20" stroke="#3a3c40" stroke-width="1.2"/>
+            <rect x="${cx-2}" y="${cy-R+3}" width="4" height="12" rx="2" fill="#ff7a1a"/></g>`;
+      s+=`</g>`;
+      const idx=v=>{ let k=0; c.opciones.forEach((o,i)=>{ if(o[1]===v) k=i; }); return k; };
+      din.push({cls:'sw'+c.id, get:()=>{ const i=idx(senal(c.senal)); return -ext+(n>1?(i*2*ext/(n-1)):0); },
+                fmt:a=>`rotate(${a.toFixed(2)} ${cx} ${cy})`});
+    }
+    else if(c.tipo==='disyuntor'){
+      const cx=x+w/2, cy=y+12;
+      s+=g0+`<circle cx="${cx}" cy="${cy}" r="10" fill="#070708" stroke="#232325" stroke-width="2"/>
+             <circle class="cb${c.id}" cx="${cx}" cy="${cy}" r="8" fill="#f2f2ee" opacity="0"/>
+             <circle cx="${cx}" cy="${cy}" r="6" fill="#2a2a2d"/>`;
+      s+=txtSVG(cx, y+h-4, c.rot, 6.2, 'middle', '#7f8a96', 600)+`</g>`;
+      din.push({cls:'cb'+c.id, get:()=>senal(c.senal), fmt:v=>v.toFixed(3), attr:'opacity'});
+    }
+  }
+  return {svg:s, din, ctl:lista.filter(c=>c.id)};
+}
+let CTL={};
+
+// La chapa entera (pantalla ancha, o el celular si la pide)
+function construirChapa(lienzo, grupo){
+  const L=CAT.lienzo||[1209,725];
+  quitarGrupo(grupo);
+  let h=`<div class="chapa" style="width:${L[0]}px;height:${L[1]}px">`;
+  (CAT.instrumentos||[]).filter(i=>i.pos&&i.dial!=='luz').forEach(it=>{
+    const r=it.tam*1.16;
+    h+=`<div class="hueco" style="left:${it.pos[0]+it.tam/2-r/2}px;top:${it.pos[1]+it.tam/2-r/2}px;width:${r}px;height:${r}px"></div>`;
+  });
+  (CAT.zonas||[]).forEach(z=>{
+    h+=`<div class="zona ${esc(z.estilo)}" id="Z_${esc(z.id)}" style="left:${z.pos[0]}px;top:${z.pos[1]}px;width:${z.tam[0]}px;height:${z.tam[1]}px"></div>`;
+  });
+  // cada zona de llaves con su lámina
+  const laminas=(CAT.zonas||[]).filter(z=>z.estilo==='llaves').map(z=>{
+    const dentro=c=>c.pos[0]>=z.pos[0]-1 && c.pos[0]<=z.pos[0]+z.tam[0] && c.pos[1]>=z.pos[1]-1 && c.pos[1]<=z.pos[1]+z.tam[1];
+    const conm=dibujarConmutadores((CAT.conmutadores||[]).filter(dentro));
+    h+=`<svg class="lamina sw" data-z="${esc(z.id)}" style="left:${z.pos[0]}px;top:${z.pos[1]}px;width:${z.tam[0]}px;height:${z.tam[1]}px"
+           viewBox="${z.pos[0]} ${z.pos[1]} ${z.tam[0]} ${z.tam[1]}">${conm.svg}</svg>`;
+    return [z.id, conm];
+  });
+  const dials=[];
+  (CAT.instrumentos||[]).filter(i=>i.pos&&i.dial!=='luz').forEach(it=>{
+    const d=fabricar(it); dials.push([it,d]);
+    h+=`<div class="inst" id="I_${grupo}_${it.id}" data-inst="${it.id}" style="left:${it.pos[0]}px;top:${it.pos[1]}px;width:${it.tam}px;height:${it.tam}px">
+        <svg viewBox="0 0 200 200">${unico(d.svg)}</svg></div>`;
+  });
+  (CAT.anunciador||[]).forEach(a=>{
+    if(!a.pos) return;
+    h+=`<div class="luz ${esc(a.color)}" data-luz="${esc(a.id)}" data-lid="${esc(a.id)}" style="left:${a.pos[0]}px;top:${a.pos[1]}px;width:${a.tam[0]}px;height:${a.tam[1]}px">
+        <span class="lamp"></span><span class="nom">${esc(a.nombre||a.leyenda)}</span></div>`;
+  });
+  h+=`</div>`;
+  lienzo.innerHTML=h;
+  dials.forEach(([it,d])=>montar(lienzo.querySelector(`#I_${grupo}_${it.id} svg`), d.din, d.txt, grupo));
+  laminas.forEach(([zid,conm])=>{
+    const sw=lienzo.querySelector(`.lamina.sw[data-z="${zid}"]`); if(sw) montar(sw, conm.din, null, grupo);
+    (conm.ctl||[]).forEach(c=>{ CTL[c.id]=c; });
+  });
+  escalarTodo();
+}
+// escala según el lado que más aprieta
+function escalar(marcoId, lienzoId){
+  const M=$(marcoId), Lz=$(lienzoId); if(!M||!Lz) return;
+  const T=Lz.querySelector('.chapa'); if(!T) return;
+  const L=CAT.lienzo||[1209,725];
+  const w=M.clientWidth, h=ANCHO&&marcoId==='marco' ? M.clientHeight : w*L[1]/L[0];
+  if(w<=0||h<=0) return;
+  const k=Math.min(w/L[0], h/L[1], 2.4);
+  T.style.transform='scale('+k.toFixed(4)+')';
+  Lz.style.width=(L[0]*k)+'px'; Lz.style.height=(L[1]*k)+'px';
+}
+let _tEsc=null;
+function escalarTodo(){
+  if(_tEsc) return;
+  _tEsc=requestAnimationFrame(()=>{ _tEsc=null; if(!CAT) return; escalar('marco','lienzo'); escalar('marcoCel','lienzoCel'); });
+}
+window.addEventListener('resize', escalarTodo);
+window.addEventListener('orientationchange', ()=>setTimeout(escalarTodo,150));
+if(window.ResizeObserver){ new ResizeObserver(escalarTodo).observe($('marco')); new ResizeObserver(escalarTodo).observe($('marcoCel')); }
+
+// Animación. Los datos llegan cada 250 ms y la aguja va de uno al otro a
+// velocidad pareja en ese mismo tiempo: queda un cuarto de segundo atrás pero
+// no se ve la escalera que había cuando llegaba en 0,2 s y se quedaba quieta.
+const TAU=0.05;
+let tPrev=0, rafPend=false, tLlegada=0, intervalo=250, tDibujo=0;
+const CADA_MS = MODO.pantalla ? 30 : 0;      // en la Pi con 30 cuadros alcanza
+function aplicar(d){ const s=d.fmt(d.a); if(s!==d.s){ d.el.setAttribute(d.attr, s); d.s=s; } }
+function difAng(a,b,circ){ let x=b-a; if(circ) x=((x%360)+540)%360-180; return x; }
+function objetivoEn(d,ahora){
+  if(d.t0===undefined) return d.o;
+  const u=Math.min(1,(ahora-d.t0)/intervalo);
+  return d.desde+difAng(d.desde,d.o,d.circ)*u;
+}
+function refrescarObjetivos(){
+  const ahora=performance.now();
+  if(tLlegada){ const iv=ahora-tLlegada; if(iv>60 && iv<1500) intervalo=intervalo*0.7+Math.min(600,Math.max(120,iv))*0.3; }
+  tLlegada=ahora;
+  for(const d of DIN){
+    const v=d.get(), nuevo=(typeof v==='number'&&isFinite(v))?v:0;
+    d.desde=objetivoEn(d,ahora); d.o=nuevo; d.t0=ahora;
+  }
+  for(const t of TXT){ const v=t.get(); if(v!==t.ult){ t.el.textContent=v; t.ult=v; } }
+}
+function cuadro(ts){
+  rafPend=false;
+  if(CADA_MS && tDibujo && ts-tDibujo<CADA_MS){ pedirCuadro(); return; }
+  tDibujo=ts;
+  const dt=Math.min(0.1, tPrev?(ts-tPrev)/1000:0.016); tPrev=ts;
+  const k=1-Math.exp(-dt/TAU), ahora=performance.now();
+  let vivos=0;
+  for(const d of DIN){
+    const obj=objetivoEn(d,ahora), dif=difAng(d.a,obj,d.circ);
+    const enCamino=d.t0!==undefined && ahora-d.t0<intervalo;
+    if(Math.abs(dif)<0.015 && !enCamino){ if(d.a!==d.o){ d.a=d.o; aplicar(d); } continue; }
+    d.a+=dif*k; aplicar(d); vivos++;
+  }
+  if(vivos) pedirCuadro();
+}
+function pedirCuadro(){ if(rafPend||document.hidden) return; rafPend=true; requestAnimationFrame(cuadro); }
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ tPrev=0; pedirCuadro(); } });
+
+function estadoVuelo(d){
+  if(!d) return ['','Conectando'];
+  if(d.tablero && d.tablero!=='activo') return ['alerta', d.tablero==='volviendo'?'Volviendo a cero':'Esperando al profesor'];
+  if(d.pausado) return ['alerta','En pausa'];
+  if(d.escenario || (d.fallas&&d.fallas.length)) return ['mal', d.escenario?'Emergencia':'Con falla'];
+  if(d.en_tierra) return ['', d.motor_vivo?'En tierra, motor en marcha':'En tierra'];
+  return ['ok','En vuelo'];
+}
+function hora(t){ const dd=n=>String(Math.floor(n)).padStart(2,'0'); t=t||0;
+  return (t>=3600?dd(t/3600)+':':'')+dd(t/60%60)+':'+dd(t%60); }
+function faseInfo(d){
+  const fases=CAT.fases||[];
+  if(d.tablero && d.tablero!=='activo')
+    return {que:'Tablero en reposo', nom:'Esperando al profesor', txt:'Las agujas quedan quietas hasta que el profesor active el tablero.', av:0};
+  const i=fases.findIndex(f=>f.id===d.fase_id);
+  const modo=d.modo_nombre||'';
+  if(d.modo===1 && i>=0)
+    return {que:`${modo.replace(/ controlado$/,'')} · fase ${i+1} de ${fases.length}`, n:`fase ${i+1} de ${fases.length}`,
+            nom:d.fase||fases[i].nombre, txt:d.fase_texto||'', av:((i+(d.fase_progreso||0))/fases.length)};
+  return {que:modo, nom:d.fase||d.escenario||'—', txt:d.fase_texto||'', av:(typeof d.fase_progreso==='number'?d.fase_progreso:0)};
+}
+function fmtValor(it,v){
+  if(it.id==='COMPASS') return [String(Math.round(((v%360)+360)%360)).padStart(3,'0'),'°'];
+  if(it.tipo==='MECANICO') return [hora(EST?EST.t:0),''];
+  const u=(it.unidad||'').replace(/^deg$/,'°');
+  const n=Math.abs(v)>=100?v.toFixed(0):(Math.abs(v)>=10?v.toFixed(0):v.toFixed(1));
+  return [n.replace('.',','), u];
+}
+function claseValor(it,v,anom){
+  if(anom) return 'mal';
+  for(const a of (it.arcos||[])) if(v>=a[0]&&v<=a[1]) return {verde:'ok',amarillo:'alerta',rojo:'mal'}[a[2]]||'';
+  return '';
+}
+function chipsDe(it){
+  const u=(it.unidad||'').replace(/^deg$/,'°'), out=[];
+  const verdes=(it.arcos||[]).filter(a=>a[2]==='verde'), rojos=(it.arcos||[]).filter(a=>a[2]==='rojo');
+  if(verdes.length){ const a=Math.min(...verdes.map(x=>x[0])), b=Math.max(...verdes.map(x=>x[1])); out.push(['v',`Normal: ${a} a ${b} ${u}`]); }
+  const vmax=verdes.length?Math.max(...verdes.map(x=>x[1])):null;
+  const arriba=rojos.filter(r=>vmax!==null&&r[0]>=vmax);
+  if(arriba.length) out.push(['r',`Máximo: ${Math.min(...arriba.map(r=>r[0]))} ${u}`]);
+  if(it.canal) out.push(['x',`Servo ${it.canal[0]}:${it.canal[1]}`]);
+  else if(it.tipo==='MECANICO') out.push(['x','Mecánico, sin servo']);
+  return out;
+}
+
+function pintar(d){
+  EST=d;
+  const [cls,txt]=estadoVuelo(d), f=faseInfo(d);
+  document.querySelectorAll('#cEstado,#mEstado').forEach(e=>{
+    e.className='chipe '+cls; e.lastElementChild.textContent=txt; });
+  if(ANCHO){
+    $('fQue').textContent=f.que; $('fNom').textContent=f.nom; $('fTxt').textContent=f.txt;
+    $('fAv').style.width=(100*Math.max(0,Math.min(1,f.av))).toFixed(1)+'%';
+    $('cHora').textContent=hora(d.t);
+  }else{
+    $('mNom').textContent=f.nom; $('mN').textContent=f.n||''; $('mTxt').textContent=f.txt;
+    $('mAv').style.width=(100*Math.max(0,Math.min(1,f.av))).toFixed(1)+'%';
+  }
+  // la clase se toca solo si cambia
+  document.querySelectorAll('[data-lid]').forEach(e=>{
+    const on=luzEncendida(d.instrumentos?d.instrumentos[e.dataset.lid]:null);
+    if(e.dataset.on!==(on?'1':'0')){ e.dataset.on=on?'1':'0'; e.classList.toggle('on',on); }
+  });
+  // indicación fallada
+  document.querySelectorAll('.inst[data-inst]').forEach(e=>{
+    const s=d.instrumentos?d.instrumentos[e.dataset.inst]:null, an=!!(s&&s.anom);
+    if(e.classList.contains('anom')!==an) e.classList.toggle('anom',an);
+  });
+  const noche=!!(d.mandos&&d.mandos.luces>0.05);
+  document.querySelectorAll('.chapa').forEach(T=>{ if(T.classList.contains('noche')!==noche) T.classList.toggle('noche',noche); });
+  refrescarObjetivos(); pedirCuadro();
+  if(ANCHO) pie(); else ficha();
+  registrar(d.mensajes||[]);
+  llave(d.llave);
+}
+// Llave BATERÍA: cartel con la cuenta regresiva (ENC lo cancela). Si el servidor
+// deja de contestar con el cartel puesto es que se apagó, así que no se reconecta.
+let APAGANDO=false;
+function llave(L){
+  APAGANDO=!!(L && L.apagando);
+  $('apagando').classList.toggle('si',APAGANDO);
+  if(APAGANDO){
+    const c=L.cuenta, p=$('apagTxt');
+    const t=(c>0) ? 'Se apaga en '+c+' s. Para cancelar, volvé la llave BATERÍA a ENC.'
+                  : 'Esperá a que la pantalla quede negra para apagar la zapatilla.';
+    if(p.textContent!==t) p.textContent=t;
+  }
+  const av=$('avisoLlave'), t=(!APAGANDO && L && L.aviso) || '';
+  if(av.textContent!==t) av.textContent=t;
+  av.classList.toggle('si',!!t);
+}
+// mensajes: en el celular van a "Qué fue pasando", en la pantalla el último abajo de la chapa
+let ultimoMsj=null;
+function registrar(ms){
+  const L=$('log');
+  for(const m of ms){
+    const k=m.t+'|'+m.texto; if(vistos.has(k)) continue; vistos.add(k);
+    ultimoMsj=m;
+    const div=document.createElement('div'); div.className='lin';
+    div.innerHTML='<span class="ts">'+hora(m.t)+'</span>'+esc(m.texto);
+    L.insertBefore(div, L.firstChild);
+    while(L.children.length>40) L.removeChild(L.lastChild);
+  }
+  if(vistos.size>400) vistos=new Set();
+}
+
+// Franja de abajo en pantalla ancha: lo último que pasó (Pi), la pista
+// (compu), o qué es lo que se eligió.
+let mirando=null;      // {tipo:'inst'|'luz'|'sw', id}
+const PISTA='Cada instrumento está en el mismo agujero que en el tablero real. Tocalo en tu celular para ver qué mide.';
+function pie(){
+  const m=fijado||mirando, T=$('pTxt'), Vv=$('pVal');
+  if(!m){
+    if(MODO.pantalla && ultimoMsj && EST && EST.t-ultimoMsj.t<40){
+      T.innerHTML=`<b>${esc(hora(ultimoMsj.t))}</b> · ${esc(ultimoMsj.texto.replace(/^\[[A-ZÁÉÍÓÚ ]+\]\s*/,''))}`;
+    }else T.textContent=PISTA;
+    Vv.innerHTML=''; return;
+  }
+  if(m.tipo==='inst'){
+    const it=instr(m.id); if(!it) return;
+    const s=EST&&EST.instrumentos?EST.instrumentos[m.id]:null;
+    T.innerHTML=`<b>${esc(it.nombre)}</b> · ${esc(it.desc||'')}`+(s&&s.anom?' <span style="color:#ff8a7a;font-weight:700">· Indicación fallada</span>':'');
+    const [n,u]=fmtValor(it, s?s.v:0); Vv.innerHTML=`<b>${esc(n)}</b>${esc(u)}`;
+  }else if(m.tipo==='luz'){
+    const a=(CAT.anunciador||[]).find(x=>x.id===m.id); if(!a) return;
+    const on=luzEncendida(EST&&EST.instrumentos?EST.instrumentos[m.id]:null);
+    T.innerHTML=`<b>Luz "${esc(a.nombre||a.leyenda)}"</b> (${esc(a.leyenda)}) · ${esc(a.desc)}`;
+    Vv.innerHTML=on?'<b style="color:#ff8a7a">Encendida</b>':'<b>Apagada</b>';
+  }else{
+    const c=CTL[m.id]; if(!c) return;
+    const est=senal(c.senal);
+    let ley;
+    if(c.tipo==='rotativo'){ const o=(c.opciones||[]).find(o=>o[1]===est); ley=o?o[0]:'?'; }
+    else if(c.tipo==='disyuntor') ley=est?'Saltado':'Armado';
+    else if(c.tipo==='perilla') ley=Math.round((est||0)*100)+' %';
+    else if(c.tipo==='lampara'||c.tipo==='boton') ley='Decorativo';
+    else ley=est?'Encendido':'Apagado';
+    T.innerHTML=`<b>${esc(c.rot)}${c.rot2?' '+esc(c.rot2):''}</b> · ${esc(c.desc||'Disyuntor: protege su circuito. Si pasa más corriente de la debida, salta. En el H-08 son decorativos, pero el del generador acompaña a la luz roja.')}`
+      +(c.senal?'<small>La mueve el piloto virtual</small>':'<small>Decorativo: el simulador no lo usa</small>');
+    Vv.innerHTML=`<b>${esc(ley)}</b>`;
+  }
+}
+function quePasa(e){
+  const i=e.target.closest('[data-inst]'); if(i) return {tipo:'inst',id:i.dataset.inst};
+  const l=e.target.closest('[data-luz]');  if(l) return {tipo:'luz',id:l.dataset.luz};
+  const s=e.target.closest('[data-sw]');   if(s) return {tipo:'sw',id:s.dataset.sw};
+  return null;
+}
+function marcar(id){
+  document.querySelectorAll('#lienzo .inst.sel').forEach(e=>e.classList.remove('sel'));
+  if(id){ const e=document.querySelector(`#lienzo .inst[data-inst="${id}"]`); if(e) e.classList.add('sel'); }
+}
+if(ANCHO && !MODO.pantalla){
+  const Lz=$('lienzo');
+  Lz.addEventListener('mouseover',e=>{ if(fijado) return; mirando=quePasa(e); marcar(mirando&&mirando.tipo==='inst'?mirando.id:null); pie(); });
+  Lz.addEventListener('mouseleave',()=>{ if(fijado) return; mirando=null; marcar(null); pie(); });
+  Lz.addEventListener('click',e=>{
+    const q=quePasa(e);
+    fijado=(q && fijado && q.id===fijado.id)?null:q;
+    marcar(fijado&&fijado.tipo==='inst'?fijado.id:null); pie();
+  });
+}
+
+// celular: instrumento grande, fila de instrumentos y luces
+let grupoCel='VUELO', elegido=null, luzElegida=null;
+function deGrupo(g){
+  const lista=(CAT.instrumentos||[]).filter(i=>i.pos&&i.dial!=='luz'&&i.zona===g);
+  // mismo orden que en la chapa, por renglones
+  return lista.sort((a,b)=>{
+    const ra=Math.floor((a.pos[1]+a.tam/2+40)/140), rb=Math.floor((b.pos[1]+b.tam/2+40)/140);
+    return ra-rb || (a.pos[0]-b.pos[0]);
+  });
+}
+function elegirGrupo(g){
+  grupoCel=g;
+  document.querySelectorAll('#grupos button').forEach(b=>b.classList.toggle('on', b.dataset.g===g));
+  const es3d=g==='3D', esLuz=g==='LUCES';
+  $('tira').hidden=es3d||esLuz; $('lucesm').hidden=!esLuz;
+  $('pista').textContent=es3d?'Arrastrá para girar el helicóptero.':esLuz?'Tocá una luz para saber qué avisa.':'Tocá un instrumento para verlo grande.';
+  $('gDial').hidden=es3d; $('gHeli').hidden=!es3d;
+  if(es3d){ ponerEn3d($('gHeli')); $('gNom').textContent='El helicóptero'; $('gNum').textContent=''; $('gUni').textContent='';
+            $('gDesc').textContent='Vuela igual que el simulador: la misma altura, rumbo, velocidad y actitud que marcan los instrumentos.';
+            $('gChips').innerHTML=''; $('gFalla').hidden=true; return; }
+  if(VISTA3D) VISTA3D.mostrar(false);
+  if(esLuz){ armarLuces(); elegirLuz(luzElegida||((CAT.anunciador||[])[0]||{}).id); return; }
+  armarTira();
+  const lista=deGrupo(g);
+  if(!elegido || !lista.find(i=>i.id===elegido)) elegirInst(lista[0]&&lista[0].id); else elegirInst(elegido);
+}
+function armarTira(){
+  quitarGrupo('mini');
+  const T=$('tira'); T.innerHTML='';
+  deGrupo(grupoCel).forEach(it=>{
+    const b=document.createElement('button'); b.type='button'; b.className='mini'; b.dataset.id=it.id;
+    b.setAttribute('aria-label', it.nombre);
+    b.innerHTML=`<span class="caja"></span><span class="l">${esc(it.corto||it.nombre)}</span>`;
+    T.appendChild(b);
+    dialEn(b.querySelector('.caja'), it, 'mini');
+    b.addEventListener('click',()=>elegirInst(it.id));
+  });
+}
+function elegirInst(id){
+  const it=instr(id); if(!it) return;
+  elegido=id;
+  document.querySelectorAll('#tira .mini').forEach(b=>b.classList.toggle('sel', b.dataset.id===id));
+  const sel=document.querySelector(`#tira .mini[data-id="${id}"]`);
+  if(sel && sel.scrollIntoView) sel.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});
+  quitarGrupo('grande'); $('gDial').hidden=false; $('gHeli').hidden=true;
+  dialEn($('gDial'), it, 'grande');
+  $('gNom').textContent=it.corto||it.nombre;
+  $('gDesc').textContent=it.desc||'';
+  $('gChips').innerHTML=chipsDe(it).map(c=>`<span class="${c[0]}">${esc(c[1])}</span>`).join('');
+  ficha(); pedirCuadro();
+}
+function armarLuces(){
+  const L=$('lucesm');
+  L.innerHTML=(CAT.anunciador||[]).map(a=>`<button type="button" class="luz ${esc(a.color)}" data-lid="${esc(a.id)}" data-l="${esc(a.id)}">
+      <span class="lamp"></span><span class="nom">${esc(a.nombre||a.leyenda)}</span></button>`).join('');
+  L.querySelectorAll('[data-l]').forEach(b=>b.addEventListener('click',()=>elegirLuz(b.dataset.l)));
+  if(EST) pintar(EST);
+}
+function elegirLuz(id){
+  const a=(CAT.anunciador||[]).find(x=>x.id===id); if(!a) return;
+  luzElegida=id;
+  document.querySelectorAll('#lucesm .luz').forEach(b=>b.classList.toggle('sel', b.dataset.l===id));
+  quitarGrupo('grande');
+  $('gDial').innerHTML=`<div class="lucesm" style="grid-template-columns:1fr;height:100%;place-items:center">
+      <div class="luz ${esc(a.color)}" data-lid="${esc(a.id)}" style="position:relative;background:none;border:0;transform:scale(2.1)">
+      <span class="lamp"></span></div></div>`;
+  $('gNom').textContent='Luz "'+(a.nombre||a.leyenda)+'"';
+  $('gDesc').textContent=a.desc||'';
+  $('gChips').innerHTML=`<span class="x">En la cabina dice ${esc(a.leyenda)}</span>`;
+  $('gFalla').hidden=true;
+  if(EST) pintar(EST);
+}
+function ficha(){
+  if(grupoCel==='3D') return;
+  if(grupoCel==='LUCES'){
+    const on=luzEncendida(EST&&EST.instrumentos?EST.instrumentos[luzElegida]:null);
+    const a=(CAT.anunciador||[]).find(x=>x.id===luzElegida)||{};
+    $('gNum').textContent=on?'Encendida':'Apagada';
+    $('gNum').className='num '+(on?({verde:'ok',ambar:'alerta',rojo:'mal'}[a.color]||''):'');
+    $('gUni').textContent=''; return;
+  }
+  const it=instr(elegido); if(!it) return;
+  const s=EST&&EST.instrumentos?EST.instrumentos[it.id]:null, v=s?s.v:0;
+  const [n,u]=fmtValor(it,v);
+  $('gNum').textContent=n; $('gUni').textContent=u;
+  $('gNum').className='num '+claseValor(it,v,s&&s.anom);
+  $('gFalla').hidden=!(s&&s.anom);
+}
+if(!ANCHO){
+  document.querySelectorAll('#grupos button').forEach(b=>b.addEventListener('click',()=>elegirGrupo(b.dataset.g)));
+  // tocar un instrumento del tablero completo lo pone grande
+  $('lienzoCel').addEventListener('click',e=>{
+    const q=quePasa(e); if(!q) return;
+    if(q.tipo==='inst'){ const it=instr(q.id); if(!it) return;
+      if(it.zona!==grupoCel) elegirGrupo(it.zona); elegirInst(q.id); $('grande').scrollIntoView({behavior:'smooth'}); }
+    else if(q.tipo==='luz'){ elegirGrupo('LUCES'); elegirLuz(q.id); $('grande').scrollIntoView({behavior:'smooth'}); }
+  });
+  $('completo').addEventListener('toggle',()=>{
+    if($('completo').open && !$('lienzoCel').firstChild) construirChapa($('lienzoCel'),'cel');
+    if(!$('completo').open){ quitarGrupo('cel'); $('lienzoCel').innerHTML=''; }
+    escalarTodo();
+  });
+}
+
+function construir(){
+  $('subtit').textContent=(CAT.aeronave.modelo||'').replace(/ Chickasaw.*$/,'')+' · EEST N° 7';
+  if(ANCHO) construirChapa($('lienzo'),'chapa');
+  else elegirGrupo('VUELO');
+}
+
+// Transporte: estado cada 250 ms. Si no contesta sale "Reconectando" y se
+// sigue probando; la pantalla de la Pi además se recarga por si hubo versión nueva.
+let caidoDesde=0;
+function caido(si){
+  if(si){ if(!caidoDesde) caidoDesde=Date.now(); if(Date.now()-caidoDesde>1500) $('reconectando').classList.add('si'); }
+  else{ caidoDesde=0; $('reconectando').classList.remove('si'); }
+}
+// Un pedido por vez, así con la wifi cargada no se amontonan ni llegan fotos
+// desordenadas (la aguja retrocedía). Corte a los 2 s y se reintenta.
+const PERIODO_MS=250, CORTE_MS=2000;
+function consultar(){
+  if(timerPoll) return;
+  timerPoll=true;
+  const vuelta=()=>{
+    if(document.hidden){ setTimeout(vuelta,PERIODO_MS); return; }
+    const t0=performance.now(), ctrl=window.AbortController?new AbortController():null;
+    const corte=setTimeout(()=>{ if(ctrl) ctrl.abort(); },CORTE_MS);
+    fetch('/api/estado',{cache:'no-store',signal:ctrl?ctrl.signal:undefined})
+      .then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(d=>{
+        if(MODO.pantalla && caidoDesde && Date.now()-caidoDesde>3000 && !APAGANDO){ location.reload(); return; }
+        caido(false); if(CAT) pintar(d); })
+      .catch(()=>{ if(!APAGANDO) caido(true); })
+      .then(()=>{ clearTimeout(corte); setTimeout(vuelta, Math.max(0, PERIODO_MS-(performance.now()-t0))); });
+  };
+  vuelta();
+}
+function datosConexion(c){
+  if(!c || !c.wifi) return;
+  document.querySelectorAll('.qRed').forEach(e=>e.textContent=c.wifi.red);
+  document.querySelectorAll('.qClave').forEach(e=>e.textContent=c.wifi.clave||'');
+  const dir=(c.url_publica||c.wifi.url||'').replace(/^http:\/\//,'').replace(/\/$/,'');
+  document.querySelectorAll('.qDir').forEach(e=>e.textContent=dir);
+  if(dirQR && dirQR!==c.url_publica){ const img=$('qrUrl'); if(img) img.src='/qr.svg?t='+Date.now(); }
+  dirQR=c.url_publica||'';
+}
+let dirQR='';
+// ?bienvenida=1: la ventana que abre el celular al conectarse, con un renglón de ayuda
+(()=>{
+  const q=new URLSearchParams(location.search), a=$('ayudaRed');
+  if(!a || MODO.pantalla || q.get('bienvenida')!=='1') return;
+  $('ayudaDir').textContent=location.host||'10.55.0.1';
+  a.classList.add('vis'); a.querySelector('button').onclick=()=>a.classList.remove('vis');
+})();
+// el wifi de la Pi aguanta unos 8 celulares
+function celulares(){
+  fetch('/api/red',{cache:'no-store'}).then(r=>r.json()).then(d=>{
+    const e=$('qCel'); if(!e) return;
+    if(!d || d.conectados===null || d.conectados===undefined){ e.hidden=true; return; }
+    const lleno=d.conectados>=d.limite; e.hidden=false; e.classList.toggle('lleno',lleno);
+    e.textContent=lleno ? `Red llena (${d.conectados} de ${d.limite}): esperá que alguien salga`
+                        : `Celulares conectados: ${d.conectados} de ${d.limite}`;
+  }).catch(()=>{});
+}
+if(MODO.pantalla){ celulares(); setInterval(celulares,5000); }
+function cargarCatalogo(){
+  fetch('/api/catalogo',{cache:'no-store'}).then(r=>r.json()).then(c=>{
+    CAT=c; datosConexion(c);
+    if(c.admin){ $('aProfeTxt').textContent='Mando'; $('aProfeA').textContent='Mando →'; }
+    construir(); consultar(); sesion();
+  }).catch(()=>{ caido(true); setTimeout(cargarCatalogo,2000); });
+}
+cargarCatalogo();
+// al encender la red propia tarda en tener IP, por eso se vuelve a preguntar cada 30 s
+setInterval(()=>{ fetch('/api/catalogo',{cache:'no-store'}).then(r=>r.json()).then(datosConexion).catch(()=>{}); },30000);
+// si hay profe con el mando, se ve en la pantalla
+function sesion(){
+  fetch('/api/sesion',{cache:'no-store'}).then(r=>r.json()).then(e=>{
+    $('cProfe').hidden=!(e && (e.hay_titular || e.mando));
+  }).catch(()=>{});
+}
+setInterval(sesion,3000);
+
+// pantalla completa (tecla F)
+function pantallaCompleta(activar){
+  document.body.classList.toggle('plena', !!activar);
+  try{
+    if(activar && !document.fullscreenElement && document.documentElement.requestFullscreen)
+      document.documentElement.requestFullscreen().catch(()=>{});
+    else if(!activar && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+  }catch(e){}
+  escalarTodo();
+}
+$('bPlena').addEventListener('click',()=>pantallaCompleta(true));
+$('bSalir').addEventListener('click',()=>pantallaCompleta(false));
+document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement) document.body.classList.remove('plena'); escalarTodo(); });
+document.addEventListener('keydown',e=>{
+  if(e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if(!ANCHO) return;
+  if(e.key==='f'||e.key==='F') pantallaCompleta(!document.body.classList.contains('plena'));
+  if(e.key==='m'||e.key==='M') location.href='/mando';
+  if(e.key==='Escape') pantallaCompleta(false);
+  const v={'1':'tablero','2':'dos','3':'heli'}[e.key]; if(v) ponerVista(v);
+});
+
+// Helicóptero 3D: three.js y el modelo (web/3d/) se bajan recién la primera
+// vez que alguien lo elige.
+let VISTA3D=null, cargando3d=false;
+function cargarScript(src){
+  return new Promise((ok,mal)=>{ const s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=()=>mal(new Error(src)); document.head.appendChild(s); });
+}
+function iniciar3d(cont){
+  if(VISTA3D||cargando3d) return;
+  cargando3d=true;
+  cont.innerHTML='<div class="cargando3d">Cargando el helicóptero…</div>';
+  const libs=window.THREE?Promise.resolve():cargarScript('/3d/three.min.js');
+  libs.then(()=>cargarScript('/3d/orbit_controls.js')).then(()=>cargarScript('/3d/room_environment.js'))
+      .then(()=>cargarScript('/3d/sikorsky.js')).then(()=>cargarScript('/3d/helicoptero.js'))
+      .then(()=>cargarScript('/3d/cine3d.js')).then(()=>cargarScript('/3d/vuelo3d.js'))
+      .then(()=>{ cont.innerHTML=''; VISTA3D=H08Vuelo3D.iniciar(cont); VISTA3D.mostrar(true); })
+      .catch(e=>{ cont.innerHTML='<div class="cargando3d">No se pudo cargar el 3D ('+esc(e.message)+').</div>'; })
+      .finally(()=>{ cargando3d=false; });
+}
+// en el celular va dentro de la tarjeta grande
+function ponerEn3d(cont){
+  quitarGrupo('grande');
+  if(!cont.classList.contains('heli3d')) cont.classList.add('heli3d');
+  if(VISTA3D) VISTA3D.mostrar(true); else iniciar3d(cont);
+}
+function ponerVista(v){
+  if(!ANCHO) return;
+  if(!['tablero','dos','heli'].includes(v)) v='tablero';
+  document.body.classList.remove('vista-tablero','vista-dos','vista-heli');
+  document.body.classList.add('vista-'+v);
+  document.querySelectorAll('[data-vista]').forEach(b=>b.classList.toggle('on', b.dataset.vista===v));
+  try{ localStorage.setItem('h08-vista', v); }catch(e){}
+  if(v!=='tablero') iniciar3d($('heli3d'));
+  if(VISTA3D) VISTA3D.mostrar(v!=='tablero');
+  escalarTodo();
+}
+document.querySelectorAll('[data-vista]').forEach(b=>b.addEventListener('click',()=>ponerVista(b.dataset.vista)));
+ponerVista(new URLSearchParams(location.search).get('vista')
+           || (()=>{ try{ return localStorage.getItem('h08-vista'); }catch(e){ return null; } })()
+           || 'tablero');
+</script>
+</body>
+</html>
